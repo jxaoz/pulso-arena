@@ -9,7 +9,7 @@ Add-Type -AssemblyName PresentationFramework, PresentationCore, WindowsBase
 . (Join-Path $PSScriptRoot 'Tuning.ps1')
 . (Join-Path $PSScriptRoot 'Recommendations.ps1')
 
-$reader = [Xml.XmlNodeReader]::new([xml](Get-Content -LiteralPath (Join-Path $PSScriptRoot 'PulsoArena.xaml') -Raw -Encoding UTF8))
+$reader = [Xml.XmlNodeReader]::new([xml](Get-Content -LiteralPath (Join-Path $PSScriptRoot 'PrismaFrame.xaml') -Raw -Encoding UTF8))
 try { $script:window = [Windows.Markup.XamlReader]::Load($reader) } finally { $reader.Close() }
 $script:ui = @{}
 foreach ($name in 'Navigation','SecondaryNav','PageCaption','PageScroll','PageBody','StatusText','WorkIndicator','SessionLabel') {
@@ -220,7 +220,7 @@ function Start-OptimizerWork([string]$Operation, $Value, [string]$Message, [scri
             Preview { . (Join-Path $Root 'Maintenance.ps1'); Get-CleanupPreview -Ids @($Value) }
             Clean { . (Join-Path $Root 'Maintenance.ps1'); Invoke-Cleanup -Preview $Value }
             RestoreList { . (Join-Path $Root 'Maintenance.ps1'); Get-OptimizerRestorePoints }
-            RestoreNew { . (Join-Path $Root 'Maintenance.ps1'); New-OptimizerRestorePoint -Description 'Pulso Arena' }
+            RestoreNew { . (Join-Path $Root 'Maintenance.ps1'); New-OptimizerRestorePoint -Description 'PrismaFrame' }
             Apply { . (Join-Path $Root 'Tuning.ps1'); Invoke-OptimizerTweak -Id $Value.Id -Title $Value.Title -Options $Value.Options }
             ApplyBatch { . (Join-Path $Root 'Tuning.ps1'); Invoke-OptimizerTweakBatch -Items @($Value) }
             Undo { . (Join-Path $Root 'Tuning.ps1'); Undo-OptimizerTweak -Token $Value }
@@ -702,7 +702,7 @@ function Invoke-PCScan {
 
 function Copy-OptimizerScan {
     $report = [Collections.Generic.List[string]]::new()
-    $report.Add('Pulso Arena — Scanner do PC')
+    $report.Add('PrismaFrame — Scanner do PC')
     foreach ($group in $script:scan.Groups) {
         $report.Add(''); $report.Add($group.Title)
         foreach ($item in $group.Items) { $report.Add("$($item.Label) — $($item.Value)") }
@@ -921,7 +921,7 @@ function Open-OptimizerAsAdmin {
     if ($script:work) { Set-OptimizerStatus 'Aguarde a operação em andamento.'; return }
     try {
         $exe = Join-Path $PSHOME 'powershell.exe'
-        $scriptPath = Join-Path $script:appRoot 'PulsoArena.ps1'
+        $scriptPath = Join-Path $script:appRoot 'PrismaFrame.ps1'
         Start-Process -FilePath $exe -Verb RunAs -WindowStyle Hidden -ArgumentList "-NoLogo -NoProfile -ExecutionPolicy Bypass -STA -File `"$scriptPath`" -OpenRecovery" -ErrorAction Stop
         $script:window.Close()
     } catch { Set-OptimizerStatus 'A elevação foi cancelada ou o Windows não concedeu acesso.' -Problem }
@@ -955,7 +955,7 @@ function Invoke-NewRestoreUI {
 
 function Invoke-RestoreBackupUI([string]$Token, [string]$Title) {
     if ($script:work) { Set-OptimizerStatus 'Aguarde a operação em andamento.'; return }
-    if (-not (Show-OptimizerDialog 'Desfazer ajuste' "O Pulso Arena vai restaurar a configuração salva antes de aplicar “$Title”." 'Restaurar configuração' -Confirm)) { return }
+    if (-not (Show-OptimizerDialog 'Desfazer ajuste' "O PrismaFrame vai restaurar a configuração salva antes de aplicar “$Title”." 'Restaurar configuração' -Confirm)) { return }
     Start-OptimizerWork 'Undo' $Token 'Restaurando e verificando a configuração…' {
         param($Result)
         Set-OptimizerStatus ([string]$Result[0])
@@ -968,7 +968,7 @@ function Show-RecoveryPage {
     $content = New-UPanel
     [void]$content.Children.Add((New-UText 'Proteção do Sistema' 18 $script:color.Accent 'SemiBold'))
     $guidance = if ($script:isAdmin) { 'Confira se a proteção da unidade do Windows está ativa. O Windows normalmente aceita um novo ponto por dia.' }
-        else { 'Abra o Pulso Arena como administrador para criar ou listar pontos do Windows.' }
+        else { 'Abra o PrismaFrame como administrador para criar ou listar pontos do Windows.' }
     $paragraph = New-UText $guidance 13 $script:color.Muted
     $paragraph.Margin = '0,6,0,13'
     [void]$content.Children.Add($paragraph)

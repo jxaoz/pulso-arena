@@ -171,6 +171,7 @@ namespace PulsoArena {
         public static string ManagedName(string executable) {
             using (SHA256 hash = SHA256.Create()) {
                 byte[] key = hash.ComputeHash(Encoding.UTF8.GetBytes(PathKey(executable)));
+                // Keep the driver profile identity used by existing recovery records.
                 return "Pulso Arena " + BitConverter.ToString(key, 0, 12).Replace("-", "");
             }
         }

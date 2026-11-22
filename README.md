@@ -1,11 +1,11 @@
-# Pulso Arena
+# PrismaFrame
 
 Otimizador gratuito em português para ajustar FPS, estabilidade e latência em jogos de PC. A maior parte da biblioteca é aplicável pelo aplicativo e o Fortnite tem uma seção opcional. O scanner identifica o hardware do PC e gera um perfil de recomendações locais.
 
 ## Abrir o aplicativo
 
 1. Extraia toda a pasta do ZIP. Mantenha o iniciador e os arquivos `.ps1` e `.xaml` juntos.
-2. Dê dois cliques em **Abrir Pulso Arena.cmd**.
+2. Dê dois cliques em **Abrir PrismaFrame.cmd**.
 3. Em **Scanner do PC**, consulte **Perfil para jogos** e **Especificações**. Use **Escanear novamente** para atualizar a leitura e **Copiar relatório** para guardar as informações.
 4. Abra **Ajustes** e escolha **Automáticos** para ver o que o app consegue aplicar. Em **Revisar pacote básico**, selecione os ajustes do Windows que quer aplicar juntos.
 
@@ -31,7 +31,7 @@ A seleção inicial cobre arquivos `.tmp` e `.temp` antigos do usuário. Tempor�
 
 ## Recuperação
 
-- Para desfazer um ajuste automático, abra **Recuperação** e clique em **Desfazer** no item correspondente. Os backups ficam em `%LOCALAPPDATA%\Pulso Arena\Backups`.
+- Para desfazer um ajuste automático, abra **Recuperação** e clique em **Desfazer** no item correspondente. Os backups ficam em `%LOCALAPPDATA%\Pulso Arena\Backups` para continuar acessíveis após a mudança de nome.
 - Para criar um ponto do Windows, use **Reabrir como administrador** em **Recuperação**. Em **Abrir Proteção do Sistema**, confirme que a proteção da unidade do Windows está ativa. Depois, clique em **Criar ponto** e aguarde a confirmação do Windows. O Windows normalmente limita a criação automatizada a um ponto por período de 24 horas.
 - Para aplicar um ponto, abra **Restauração do Sistema** nessa mesma tela e siga o assistente do Windows. O ponto cobre configurações e arquivos do sistema. A exclusão feita pela limpeza é permanente.
 
@@ -39,7 +39,7 @@ A seleção inicial cobre arquivos `.tmp` e `.temp` antigos do usuário. Tempor�
 
 ## Código-fonte
 
-- `PulsoArena.ps1` e `PulsoArena.xaml` contêm a interface e conectam os recursos.
+- `PrismaFrame.ps1` e `PrismaFrame.xaml` contêm a interface e conectam os recursos.
 - `Tweaks.ps1` contém o catálogo, as descrições e as referências oficiais.
 - `Scanner.ps1` reúne e apresenta os dados de hardware e do Windows.
 - `Recommendations.ps1` gera o perfil de jogos com os dados estruturados do scanner.

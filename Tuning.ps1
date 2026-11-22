@@ -111,6 +111,7 @@ function Set-TuningPowerPlan([string]$Plan) {
 }
 
 function Get-TuningFolder {
+    # This location keeps recovery compatible with backups from earlier versions.
     Join-Path ([Environment]::GetFolderPath('LocalApplicationData')) 'Pulso Arena\Backups'
 }
 
@@ -141,6 +142,7 @@ function Get-OptimizerBackups {
 
 function Invoke-TuningLock([scriptblock]$Operation) {
     $sid = [Security.Principal.WindowsIdentity]::GetCurrent().User.Value
+    # Share the access lock with the versions that use this same backup directory.
     $mutex = [Threading.Mutex]::new($false, "Local\PulsoArena-$sid")
     $locked = $false
     try {

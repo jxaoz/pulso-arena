@@ -448,13 +448,13 @@ $script:Tweaks = @(
 )
 
 $automaticInstructions = @{
-    gamefpscap = 'Use o GameUserSettings.ini de um jogo Unreal compatível e escolha o limite em FPS. Com o jogo fechado, o Pulso Arena atualiza o limite registrado. Compare os tempos de quadro na mesma cena.'
-    gamedynamicres = 'Selecione o GameUserSettings.ini de um jogo Unreal compatível. O Pulso Arena liga a resolução dinâmica quando o arquivo expõe a opção. O suporte e a qualidade dependem do jogo.'
+    gamefpscap = 'Use o GameUserSettings.ini de um jogo Unreal compatível e escolha o limite em FPS. Com o jogo fechado, o PrismaFrame atualiza o limite registrado. Compare os tempos de quadro na mesma cena.'
+    gamedynamicres = 'Selecione o GameUserSettings.ini de um jogo Unreal compatível. O PrismaFrame liga a resolução dinâmica quando o arquivo expõe a opção. O suporte e a qualidade dependem do jogo.'
     gamevsync = 'Teste V-Sync desligado em um jogo Unreal compatível. Selecione o GameUserSettings.ini com o jogo fechado. A imagem pode apresentar cortes horizontais.'
-    gamewindowmode = 'Selecione o GameUserSettings.ini de um jogo Unreal compatível. O Pulso Arena seleciona tela cheia, se o arquivo expuser a opção. Compare com seu modo anterior.'
+    gamewindowmode = 'Selecione o GameUserSettings.ini de um jogo Unreal compatível. O PrismaFrame seleciona tela cheia, se o arquivo expuser a opção. Compare com seu modo anterior.'
     gamebackgroundfps = 'Em PCs NVIDIA, selecione o executável do jogo e um limite entre 20 e 200 FPS para quando ficar em segundo plano. A aplicação depende do suporte do driver e do jogo.'
     winanimations = 'Ajusta os efeitos SPI de animação da interface do Windows. Pode simplificar transições na área de trabalho. O efeito durante o jogo depende da carga do sistema.'
-    gamegpu = 'Escolha o executável principal do jogo. O Pulso Arena grava a preferência Alto desempenho do Windows para esse executável. Reabra o jogo e confirme a GPU selecionada.'
+    gamegpu = 'Escolha o executável principal do jogo. O PrismaFrame grava a preferência Alto desempenho do Windows para esse executável. Reabra o jogo e confirme a GPU selecionada.'
     hags = 'Testa a ativação de HAGS quando o driver indica suporte. Requer administrador e reinicialização. Compare a estabilidade antes de manter a configuração.'
     flipmodel = 'Ativa a preferência global de otimizações para jogos em janela no Windows 11 22H2 ou mais recente. Jogos DirectX 10/11 compatíveis podem usar um modo de apresentação de menor latência.'
     nvpstate = 'Selecione o executável do jogo para testar o modo NVIDIA Preferir desempenho máximo. Pode aumentar consumo e temperatura durante o jogo.'
