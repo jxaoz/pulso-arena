@@ -1,21 +1,23 @@
 # Pulso Arena
 
-Otimizador gratuito em português para ajustar FPS, estabilidade e latência em jogos de PC. O catálogo tem 100 opções, incluindo 12 ajustes automáticos e uma seção opcional para Fortnite. O aplicativo escaneia o PC em que abre e recomenda ajustes com base no hardware detectado.
+Otimizador gratuito em português para ajustar FPS, estabilidade e latência em jogos de PC. A maior parte da biblioteca é aplicável pelo aplicativo e o Fortnite tem uma seção opcional. O scanner identifica o hardware do PC e gera um perfil de recomendações locais.
 
 ## Abrir o aplicativo
 
 1. Extraia toda a pasta do ZIP. Mantenha o iniciador e os arquivos `.ps1` e `.xaml` juntos.
 2. Dê dois cliques em **Abrir Pulso Arena.cmd**.
 3. Em **Scanner do PC**, consulte **Perfil para jogos** e **Especificações**. Use **Escanear novamente** para atualizar a leitura e **Copiar relatório** para guardar as informações.
-4. Abra **Ajustes**, pesquise um termo ou escolha uma categoria. Cada opção explica o efeito esperado, como usá-la e as condições relevantes.
+4. Abra **Ajustes** e escolha **Automáticos** para ver o que o app consegue aplicar. Em **Revisar pacote básico**, selecione os ajustes do Windows que quer aplicar juntos.
 
 O aplicativo usa o Windows PowerShell 5.1 de 64 bits e o WPF que acompanham o Windows 10 e 11 de 64 bits. A opção de política de execução do iniciador vale apenas para a instância do PowerShell que carrega o aplicativo.
 
 ## Ajustes para jogos
 
-- **Automático** aplica uma configuração pelo aplicativo mediante confirmação. As 12 opções automáticas abrangem o Registro do usuário e planos de energia. Cada alteração guarda a configuração anterior no histórico.
+- **Automático** aplica uma configuração mediante confirmação. Há ajustes de Windows e energia, perfis NVIDIA e configurações locais para jogos compatíveis com Unreal. Cada mudança guarda os valores anteriores no histórico.
 - **Configurações do Windows** abre a área correspondente para fazer a alteração. O catálogo de debloat cobre aplicativos, inicialização e atividades em segundo plano.
 - **Guia manual** e **Guia com link oficial** indicam onde configurar o jogo, a GPU, os periféricos, o monitor, a rede ou o hardware. A seção Fortnite cobre renderização, NVIDIA Reflex, limite de quadros e região de partidas, entre outros ajustes.
+
+Os ajustes **NVIDIA** pedem o executável principal do jogo quando afetam um perfil individual. Os ajustes **Unreal** pedem o `GameUserSettings.ini` local, normalmente em `%LOCALAPPDATA%\<NomeDoJogo>\Saved\Config\Windows` ou em `Documentos\My Games`. Feche o jogo antes de editar esse arquivo. O aplicativo aplica somente chaves reconhecidas já presentes. A compatibilidade depende do jogo, da API gráfica, do driver ou da edição do Windows.
 
 O relatório inclui processador, GPU e VRAM, módulos de RAM, armazenamento, placa-mãe, BIOS, telas, rede e versão do Windows, conforme os dados disponibilizados pelo sistema e pelos drivers. O perfil cruza dados como frequência e resolução da tela, GPU, VRAM, RAM e tipo de unidade com as opções da biblioteca. Em PCs com mais de uma GPU, o perfil orienta a verificar qual placa o jogo usa. As sugestões são calculadas localmente e cada alteração automática exige confirmação.
 
@@ -41,5 +43,6 @@ A seleção inicial cobre arquivos `.tmp` e `.temp` antigos do usuário. Tempor�
 - `Tweaks.ps1` contém o catálogo, as descrições e as referências oficiais.
 - `Scanner.ps1` reúne e apresenta os dados de hardware e do Windows.
 - `Recommendations.ps1` gera o perfil de jogos com os dados estruturados do scanner.
-- `Tuning.ps1` aplica os ajustes automáticos e mantém os backups necessários para desfazê-los.
+- `Tuning.ps1` coordena os ajustes automáticos e mantém os backups necessários para desfazê-los.
+- `WindowsTuning.ps1`, `NvidiaTuning.ps1` e `GameConfigTuning.ps1` cuidam dos ajustes da plataforma, do driver e dos arquivos locais de jogos compatíveis.
 - `Maintenance.ps1` implementa a prévia, a limpeza e a integração com a Restauração do Sistema.

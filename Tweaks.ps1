@@ -446,3 +446,188 @@ $script:Tweaks = @(
         'Pode resolver travadas persistentes ligadas à recompilação de shaders em DX12. As primeiras partidas podem compilar novamente.' `
         'Use apenas se houver engasgos persistentes em DX12 compatíveis com o problema descrito pela Epic. Feche Fortnite e Epic Games Launcher e siga os passos oficiais para NVIDIA.' 'https://www.epicgames.com/help/c-34254770/c-38015632/a11302262?lang=pt-BR'
 )
+
+$automaticInstructions = @{
+    gamefpscap = 'Use o GameUserSettings.ini de um jogo Unreal compatível e escolha o limite em FPS. Com o jogo fechado, o Pulso Arena atualiza o limite registrado. Compare os tempos de quadro na mesma cena.'
+    gamedynamicres = 'Selecione o GameUserSettings.ini de um jogo Unreal compatível. O Pulso Arena liga a resolução dinâmica quando o arquivo expõe a opção. O suporte e a qualidade dependem do jogo.'
+    gamevsync = 'Teste V-Sync desligado em um jogo Unreal compatível. Selecione o GameUserSettings.ini com o jogo fechado. A imagem pode apresentar cortes horizontais.'
+    gamewindowmode = 'Selecione o GameUserSettings.ini de um jogo Unreal compatível. O Pulso Arena seleciona tela cheia, se o arquivo expuser a opção. Compare com seu modo anterior.'
+    gamebackgroundfps = 'Em PCs NVIDIA, selecione o executável do jogo e um limite entre 20 e 200 FPS para quando ficar em segundo plano. A aplicação depende do suporte do driver e do jogo.'
+    winanimations = 'Ajusta os efeitos SPI de animação da interface do Windows. Pode simplificar transições na área de trabalho. O efeito durante o jogo depende da carga do sistema.'
+    gamegpu = 'Escolha o executável principal do jogo. O Pulso Arena grava a preferência Alto desempenho do Windows para esse executável. Reabra o jogo e confirme a GPU selecionada.'
+    hags = 'Testa a ativação de HAGS quando o driver indica suporte. Requer administrador e reinicialização. Compare a estabilidade antes de manter a configuração.'
+    flipmodel = 'Ativa a preferência global de otimizações para jogos em janela no Windows 11 22H2 ou mais recente. Jogos DirectX 10/11 compatíveis podem usar um modo de apresentação de menor latência.'
+    nvpstate = 'Selecione o executável do jogo para testar o modo NVIDIA Preferir desempenho máximo. Pode aumentar consumo e temperatura durante o jogo.'
+    nvtexture = 'Selecione o executável para ajustar a filtragem de textura NVIDIA para Desempenho. Compare nitidez e FPS, especialmente se o jogo já limitar pela GPU.'
+    shadercache = 'Ativa o cache de shaders global do driver NVIDIA. O cache pode reduzir recompilações em partidas futuras e ocupa espaço em disco.'
+    nvlowlatency = 'Selecione o executável para limitar a fila compatível do driver NVIDIA a um quadro pré-renderizado. Use em jogos sem Reflex. O efeito depende da API e do controle da fila pelo jogo.'
+    stickykeys = 'Desativa apenas o atalho de cinco pressões da tecla Shift para Teclas de Aderência. O estado do recurso de acessibilidade é preservado.'
+    filterkeys = 'Desativa apenas o atalho de segurar Shift direito para Teclas de Filtro. O estado do recurso de acessibilidade é preservado.'
+    deliveryoptimization = 'Configura a Otimização de Entrega do Windows para baixar via HTTP sem compartilhamento entre PCs. Requer administrador. O Windows continua baixando atualizações.'
+    backgroundapps = 'Aplica a política do Windows que restringe apps empacotados em segundo plano. Pode interromper notificações desses apps. Requer administrador.'
+    backgroundbrowser = 'Desativa a execução do Microsoft Edge em segundo plano depois de fechar a última janela. Reabra o Edge para que ele leia a política.'
+    startupboost = 'Desativa a Inicialização Rápida do Microsoft Edge. A primeira abertura poderá demorar mais. Reabra o Edge para que ele leia a política.'
+    framecap = 'Feche o Fortnite e escolha um limite de 30 a 360 FPS. Comece com um limite sustentável. Compare o resultado com V-Sync, frequência da tela e tempos de quadro.'
+    vsync = 'Com o Fortnite fechado, desativa V-Sync quando o arquivo do jogo expõe a configuração. A imagem pode apresentar cortes horizontais.'
+    fullscreen = 'Com o Fortnite fechado, seleciona tela cheia quando o arquivo expõe o modo de janela. Compare com o modo anterior.'
+    renderres = 'Com o Fortnite fechado, testa escala interna de 90% quando o modo expõe a opção. Reduz trabalho da GPU em troca de nitidez.'
+    shadows = 'Com o Fortnite fechado, define Sombras no nível baixo quando o arquivo expõe essa opção.'
+    textures = 'Com o Fortnite fechado, testa Texturas no nível baixo quando o arquivo expõe essa opção.'
+    effects = 'Com o Fortnite fechado, define Efeitos no nível baixo quando o arquivo expõe essa opção.'
+    postprocess = 'Com o Fortnite fechado, define Pós-processamento no nível baixo quando o arquivo expõe essa opção.'
+    viewdistance = 'Com o Fortnite fechado, define Distância de visão no nível baixo quando o arquivo expõe essa opção. Compare a visibilidade.'
+    nanite = 'Com o Fortnite fechado, desativa Nanite quando o arquivo expõe essa opção. O efeito depende do modo de renderização.'
+    lumen = 'Com o Fortnite fechado, reduz os níveis existentes de iluminação global e reflexos. O efeito depende do modo de renderização.'
+    showfps = 'Com o Fortnite fechado, ativa o contador de FPS quando o arquivo expõe a opção. Use a mesma cena ao comparar.'
+}
+
+foreach ($tweak in $script:Tweaks) {
+    if ($automaticInstructions.ContainsKey($tweak.Id)) {
+        $tweak.Mode = 'Auto'
+        $tweak.Instructions = $automaticInstructions[$tweak.Id]
+        $tweak.Target = ''
+    }
+}
+
+($script:Tweaks | Where-Object Id -eq 'gamefpscap').Title = 'Definir limite de FPS em jogos Unreal'
+($script:Tweaks | Where-Object Id -eq 'gamevsync').Title = 'Testar V-Sync desligado em jogos Unreal'
+($script:Tweaks | Where-Object Id -eq 'gamevsync').Summary = 'Pode reduzir a espera pela sincronização da tela, com chance de cortes horizontais na imagem.'
+($script:Tweaks | Where-Object Id -eq 'gamewindowmode').Title = 'Testar tela cheia em jogos Unreal'
+($script:Tweaks | Where-Object Id -eq 'gamedynamicres').Title = 'Testar resolução dinâmica em jogos Unreal'
+
+$script:Tweaks += @(
+    New-OptimizerTweak gamefpscapguide 'Escolher um limite de FPS dentro do jogo' Jogos Manual `
+        'Um teto que o PC sustenta ajuda a comparar estabilidade, ruído e resposta em qualquer motor.' `
+        'Use o limitador nas opções de vídeo do jogo quando disponível. Comece perto da taxa da tela e compare com um limite sustentado usando o mesmo percurso.'
+    New-OptimizerTweak uescale 'Testar escala de renderização a 90%' Jogos Auto `
+        'Diminui o número de pixels internos quando o jogo está limitado pela GPU.' `
+        'Selecione o GameUserSettings.ini de um jogo Unreal compatível. Se a opção estiver presente, o aplicativo testa 90%. Compare a nitidez.'
+    New-OptimizerTweak ueview 'Reduzir distância de visão' Jogos Auto `
+        'Pode reduzir a quantidade de objetos distantes que a CPU e a GPU precisam processar.' `
+        'Selecione o GameUserSettings.ini de um jogo Unreal compatível. O grupo View Distance vai para Baixo se estiver presente.'
+    New-OptimizerTweak ueaa 'Reduzir qualidade do antisserrilhado' Jogos Auto `
+        'Reduz o custo potencial de suavizar bordas em troca de mais serrilhado.' `
+        'Ajusta para Baixo o grupo de antisserrilhado no arquivo de um jogo Unreal compatível. Confira se o jogo respeitou o nível.'
+    New-OptimizerTweak ueshadows 'Reduzir qualidade das sombras' Jogos Auto `
+        'Diminui o custo de gerar sombras, com redução de detalhes visuais.' `
+        'Ajusta para Baixo o grupo de sombras no GameUserSettings.ini de um jogo Unreal compatível.'
+    New-OptimizerTweak ueglobalillumination 'Reduzir iluminação global' Jogos Auto `
+        'Pode aliviar o cálculo de luz indireta em jogos que usam esse grupo do Unreal.' `
+        'Ajusta a iluminação global para Baixo quando o jogo expõe o grupo. Compare a aparência em interiores.'
+    New-OptimizerTweak uereflections 'Reduzir qualidade dos reflexos' Jogos Auto `
+        'Pode reduzir o custo de renderizar reflexos em superfícies brilhantes.' `
+        'Ajusta reflexos para Baixo quando o jogo expõe o grupo. Compare áreas com água ou metal.'
+    New-OptimizerTweak uepostprocess 'Reduzir pós-processamento' Jogos Auto `
+        'Diminui o custo de efeitos aplicados depois de renderizar a cena.' `
+        'Ajusta pós-processamento para Baixo no GameUserSettings.ini de um jogo Unreal compatível.'
+    New-OptimizerTweak uetextures 'Reduzir qualidade de texturas' Jogos Auto `
+        'Pode reduzir pressão na VRAM. Texturas podem parecer menos nítidas.' `
+        'Ajusta texturas para Baixo no GameUserSettings.ini de um jogo Unreal compatível. Compare travadas ao percorrer o mesmo cenário.'
+    New-OptimizerTweak ueeffects 'Reduzir qualidade dos efeitos' Jogos Auto `
+        'Pode aliviar partículas e efeitos visuais em cenas carregadas.' `
+        'Ajusta efeitos para Baixo no GameUserSettings.ini de um jogo Unreal compatível.'
+    New-OptimizerTweak uefoliage 'Reduzir vegetação' Jogos Auto `
+        'Pode reduzir densidade e custo de vegetação em cenas abertas.' `
+        'Ajusta vegetação para Baixo quando o jogo Unreal expõe o grupo. Confira o resultado em áreas abertas.'
+    New-OptimizerTweak ueshading 'Reduzir qualidade de sombreamento' Jogos Auto `
+        'Pode reduzir o custo de materiais e sombreamento da cena.' `
+        'Ajusta para Baixo o grupo de sombreamento quando o jogo Unreal o expõe.'
+    New-OptimizerTweak uelandscape 'Reduzir qualidade do terreno' Jogos Auto `
+        'Pode simplificar a renderização do terreno em ambientes grandes.' `
+        'Ajusta para Baixo o grupo de paisagem quando o jogo Unreal o expõe.'
+
+    New-OptimizerTweak nvfpscap 'Limitar FPS pelo driver NVIDIA' GPU Auto `
+        'Pode moderar consumo e saturação da GPU em jogos compatíveis.' `
+        'Selecione o executável e um limite inteiro de 20 a 1000 FPS. Compare com o limite interno do jogo e evite empilhar limitadores durante a comparação.'
+    New-OptimizerTweak nvvsyngeneric 'Testar V-Sync desligado no perfil NVIDIA' GPU Auto `
+        'Pode retirar a espera por atualização de tela se o driver controlar a sincronização. Pode causar tearing.' `
+        'Escolha o executável do jogo. Confira se a API e o jogo aceitam a substituição do driver.'
+    New-OptimizerTweak nvpreferredrefresh 'Preferir frequência máxima no perfil NVIDIA' GPU Auto `
+        'Pede ao driver a maior frequência compatível para o jogo escolhido quando o modo de tela permitir.' `
+        'Escolha o executável e confirme no monitor em que você joga. A opção depende da tela e do modo de exibição.'
+    New-OptimizerTweak nvogltriplebuffer 'Testar buffer triplo no OpenGL' GPU Auto `
+        'Pode melhorar a fluidez em jogos OpenGL com V-Sync. Pode aumentar a latência.' `
+        'Use em um executável NVIDIA OpenGL compatível com V-Sync. Compare o tempo de resposta e a estabilidade dos quadros.'
+    New-OptimizerTweak nvoglthreaded 'Testar otimização multithread no OpenGL' GPU Auto `
+        'Permite ao driver NVIDIA usar otimização por threads para jogos OpenGL compatíveis.' `
+        'Selecione o executável. Compare com o comportamento automático, pois alguns jogos funcionam melhor na configuração anterior.'
+    New-OptimizerTweak nvfxaaoff 'Desligar FXAA pelo driver NVIDIA' GPU Auto `
+        'Evita que o driver aplique seu filtro de antisserrilhado ao jogo escolhido.' `
+        'Selecione o executável e compare a nitidez e o custo. O antisserrilhado interno do jogo continua independente.'
+    New-OptimizerTweak nvtrilinear 'Otimizar a filtragem trilinear NVIDIA' GPU Auto `
+        'Pode aliviar filtragem de texturas com redução de qualidade em algumas superfícies.' `
+        'Selecione o executável e compare em jogos DirectX que aceitem a opção. Observe texturas vistas de longe.'
+    New-OptimizerTweak nvanisosample 'Otimizar amostras anisotrópicas NVIDIA' GPU Auto `
+        'Reduz amostras de filtragem em jogos compatíveis, com possível perda de nitidez em ângulo.' `
+        'Selecione o executável e compare superfícies inclinadas no mesmo trajeto.'
+    New-OptimizerTweak nvshadercachesize 'Reservar até 10 GB para cache NVIDIA' GPU Auto `
+        'Pode reduzir a expulsão de shaders compilados em bibliotecas com vários jogos.' `
+        'Ajuste global do driver. O aplicativo verifica se há pelo menos 15 GB livres na unidade do perfil antes de aplicar o limite.'
+
+    New-OptimizerTweak winwindragoutline 'Mostrar contorno ao mover janelas' Windows Auto `
+        'Reduz a atualização de conteúdo quando você arrasta uma janela.' `
+        'Troca o redesenho durante o arraste pela exibição de contorno. O efeito é restrito à área de trabalho.'
+    New-OptimizerTweak poweracminimum 'Manter piso de CPU em 25% na tomada' Windows Auto `
+        'Evita um nível mínimo muito baixo em planos compatíveis, com possível aumento de consumo.' `
+        'Pode elevar o mínimo a até 25%, respeitando o máximo atual e preservando mínimos já maiores. A alteração vale na tomada.'
+    New-OptimizerTweak poweracmaximum 'Permitir CPU em 100% na tomada' Windows Auto `
+        'Remove um teto abaixo de 100% no plano ativo, se a opção estiver disponível.' `
+        'Ajusta apenas o uso na tomada. Respeita limites do processador, refrigeração e firmware.'
+    New-OptimizerTweak poweracboost 'Habilitar o modo de boost da CPU na tomada' Windows Auto `
+        'Permite aceleração acima da frequência nominal em CPUs compatíveis.' `
+        'Habilita o boost no plano ativo quando disponível e preserva os modos já ativos. Compare consumo e estabilidade térmica.'
+    New-OptimizerTweak poweracepp 'Dar mais preferência ao desempenho em EPP' Windows Auto `
+        'Ajusta a preferência energética para 30 de 100 na tomada quando o hardware a usa e o plano ainda favorece mais a economia.' `
+        'Preserva preferências que já favorecem mais o desempenho. O teste pode aumentar temperatura e ruído.'
+    New-OptimizerTweak poweracparking 'Testar o plano sem estacionamento de núcleos' Windows Auto `
+        'Mantém todos os núcleos elegíveis no plano de energia quando ligado à tomada.' `
+        'Teste em jogos sensíveis às transições do plano. Pode elevar consumo em repouso e o ganho depende da CPU.'
+    New-OptimizerTweak poweracpcie 'Desligar economia do link PCIe na tomada' Windows Auto `
+        'Evita transições de economia do link em dispositivos que respeitam a política.' `
+        'Aplica somente no plano ativo e na tomada. Compare estabilidade e consumo.'
+    New-OptimizerTweak poweracdiskidle 'Evitar desligamento de HDD por inatividade' Hardware Auto `
+        'Pode evitar a espera para o disco voltar a girar quando o jogo volta a usar um HDD.' `
+        'Define o tempo de desligamento por ociosidade como Nunca na tomada. Use se os jogos usam um HDD. O disco pode gastar mais energia.'
+    New-OptimizerTweak keyboarddelay 'Usar o menor atraso de repetição do teclado' Entrada Auto `
+        'Reduz a espera até o início da repetição de uma tecla mantida no Windows.' `
+        'Ajusta a repetição do teclado para o menor atraso. A primeira pressão e jogos que usam entrada bruta ficam independentes.'
+    New-OptimizerTweak keyboardrepeat 'Usar a maior velocidade de repetição do teclado' Entrada Auto `
+        'Aumenta a frequência de repetição de uma tecla mantida nas interfaces que usam o valor do Windows.' `
+        'Teste em jogos e menus que usam repetição da área de trabalho. Pode dificultar digitação em outros aplicativos.'
+    New-OptimizerTweak mousecursortrail 'Desligar rastros do ponteiro' Entrada Auto `
+        'Remove as cópias visuais que seguem o ponteiro pelo Windows.' `
+        'Aplica ao ponteiro da área de trabalho e a jogos que o usam. Se você depende dos rastros para enxergar o cursor, mantenha a configuração anterior.'
+    New-OptimizerTweak mousesnapdefault 'Impedir saltos do ponteiro para botões' Entrada Auto `
+        'Evita mover o ponteiro automaticamente para o botão padrão de caixas de diálogo.' `
+        'Aplica à sessão do Windows e às interfaces que usam o comportamento de botão padrão.'
+    New-OptimizerTweak mousepointerdefault 'Restaurar velocidade padrão do ponteiro' Entrada Auto `
+        'Define o controle de velocidade do Windows em 10 de 20 como referência consistente.' `
+        'Confira sua sensibilidade antes de aplicar. Jogos que usam entrada bruta podem ter controle independente.'
+    New-OptimizerTweak togglekeyshotkey 'Desativar o atalho de Teclas de Alternância' Entrada Auto `
+        'Evita que segurar Num Lock alterne avisos sonoros sem querer.' `
+        'Muda apenas o atalho. O recurso de acessibilidade continua no estado atual.'
+    New-OptimizerTweak mousekeyshotkey 'Desativar o atalho de Teclas do Mouse' Entrada Auto `
+        'Evita que a combinação acidental ative o controle do ponteiro pelo teclado.' `
+        'Muda apenas o atalho. O recurso de acessibilidade continua no estado atual.'
+    New-OptimizerTweak chromebackground 'Desativar execução do Chrome após fechar' Debloat Auto `
+        'Pode reduzir uso de memória e CPU de extensões quando nenhuma janela do Chrome está aberta.' `
+        'Aplica a política de execução em segundo plano ao Chrome. Algumas extensões deixam de funcionar após fechar a última janela.'
+    New-OptimizerTweak deliverybackgroundlimit 'Limitar downloads de entrega em segundo plano' Rede Auto `
+        'Restringe downloads em segundo plano da Otimização de Entrega a 10% da banda medida.' `
+        'Requer administrador. Pode alongar downloads de atualizações distribuídos pela Otimização de Entrega.'
+    New-OptimizerTweak deliveryforegroundlimit 'Limitar downloads de entrega em primeiro plano' Rede Auto `
+        'Restringe downloads de primeiro plano da Otimização de Entrega a 25% da banda medida.' `
+        'Requer administrador. Pode alongar downloads de atualização iniciados por você.'
+)
+
+$script:Sources += @(
+    [pscustomobject]@{ Label = 'Unreal Engine · Game User Settings'; Url = 'https://dev.epicgames.com/documentation/unreal-engine/API/Runtime/Engine/UGameUserSettings' }
+    [pscustomobject]@{ Label = 'Unreal Engine · Níveis de escalabilidade'; Url = 'https://dev.epicgames.com/documentation/en-us/unreal-engine/scalability-reference-for-unreal-engine' }
+    [pscustomobject]@{ Label = 'NVIDIA · Perfis de driver'; Url = 'https://docs.nvidia.com/nvapi/group__drsapi.html' }
+    [pscustomobject]@{ Label = 'NVIDIA · Referência de opções 3D'; Url = 'https://www.nvidia.com/content/Control-Panel-Help/vLatest/en-us/mergedProjects/nv3d/Manage_3D_Settings_%28reference%29.htm' }
+    [pscustomobject]@{ Label = 'Microsoft · Opções de energia'; Url = 'https://learn.microsoft.com/en-us/windows-hardware/design/device-experiences/powercfg-command-line-options' }
+    [pscustomobject]@{ Label = 'Microsoft · Preferências de interface e entrada'; Url = 'https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-systemparametersinfow' }
+    [pscustomobject]@{ Label = 'Microsoft · Otimização de Entrega'; Url = 'https://learn.microsoft.com/en-us/windows/deployment/do/waas-delivery-optimization-reference' }
+    [pscustomobject]@{ Label = 'Microsoft Edge · Execução em segundo plano'; Url = 'https://learn.microsoft.com/en-us/deployedge/microsoft-edge-browser-policies/backgroundmodeenabled' }
+    [pscustomobject]@{ Label = 'Google Chrome · Política de execução em segundo plano'; Url = 'https://chromeenterprise.google/intl/en_us/policies/#BackgroundModeEnabled' }
+)

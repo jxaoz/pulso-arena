@@ -1,8 +1,12 @@
-﻿function New-TuningValue($Path, $Name, $Value, $Type = 'DWord') {
-    [pscustomobject]@{ Path = $Path; Name = $Name; Value = $Value; Type = $Type; Exists = $true }
+﻿foreach ($providerModule in 'WindowsTuning.ps1', 'GameConfigTuning.ps1', 'NvidiaTuning.ps1') {
+    . (Join-Path $PSScriptRoot $providerModule)
 }
 
-function Get-TuningDefinition([string]$Id) {
+function New-TuningValue($Path, $Name, $Value, $Type = 'DWord', $Hive = 'CurrentUser') {
+    [pscustomobject]@{ Hive = $Hive; Path = $Path; Name = $Name; Value = $Value; Type = $Type; Exists = $true }
+}
+
+function Get-TuningDefinition([string]$Id, $Options) {
     $gameBar = 'Software\Microsoft\GameBar'
     $dvr = 'Software\Microsoft\Windows\CurrentVersion\GameDVR'
     $advanced = 'Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced'
@@ -27,23 +31,39 @@ function Get-TuningDefinition([string]$Id) {
         snapoff { New-TuningValue 'Control Panel\Desktop' 'WindowArrangementActive' '0' 'String' }
         powerhigh { return [pscustomobject]@{ Kind = 'Power'; Plan = '8c5e7fda-e8bf-4a96-9a85-a6e23a8c635c' } }
         powerbalanced { return [pscustomobject]@{ Kind = 'Power'; Plan = '381b4222-f694-41f0-9685-ff5bb260df2e' } }
-        default { throw 'Ajuste automático desconhecido.' }
+        default {
+            $provider = Get-WindowsTuningDefinition $Id $Options
+            if (-not $provider) { $provider = Get-GameConfigDefinition $Id }
+            if (-not $provider) { $provider = Get-NvidiaTuningDefinition $Id }
+            if (-not $provider) { throw 'Ajuste automático desconhecido.' }
+            return $provider
+        }
     }
-    if ($Id -eq 'taskbarwidgets' -and [Environment]::OSVersion.Version.Build -lt 22000) { throw 'Widgets da barra de tarefas requerem o Windows 11.' }
-    [pscustomobject]@{ Kind = 'Registry'; Values = @($values) }
+    $minimumBuild = if ($Id -eq 'taskbarwidgets') { 22000 } else { 0 }
+    [pscustomobject]@{ Kind = 'Registry'; Values = @($values); MinimumBuild = $minimumBuild }
+}
+
+function Get-TuningHive($Definition) {
+    if (-not $Definition.Hive) { return [Microsoft.Win32.Registry]::CurrentUser }
+    switch ($Definition.Hive) {
+        { $_ -in 'CurrentUser', 'HKEY_CURRENT_USER' } { [Microsoft.Win32.Registry]::CurrentUser }
+        { $_ -in 'LocalMachine', 'HKEY_LOCAL_MACHINE' } { [Microsoft.Win32.Registry]::LocalMachine }
+        default { throw 'Origem inválida para um valor do Registro.' }
+    }
 }
 
 function Get-TuningValue($Definition) {
-    $key = [Microsoft.Win32.Registry]::CurrentUser.OpenSubKey($Definition.Path)
+    $root = Get-TuningHive $Definition
+    $key = $root.OpenSubKey($Definition.Path)
     try {
         if ($key -and $key.GetValueNames() -contains $Definition.Name) {
             return [pscustomobject]@{
-                Path = $Definition.Path; Name = $Definition.Name; Exists = $true
+                Hive = $root.Name; Path = $Definition.Path; Name = $Definition.Name; Exists = $true
                 Type = $key.GetValueKind($Definition.Name).ToString()
                 Value = $key.GetValue($Definition.Name, $null, [Microsoft.Win32.RegistryValueOptions]::DoNotExpandEnvironmentNames)
             }
         }
-        [pscustomobject]@{ Path = $Definition.Path; Name = $Definition.Name; Exists = $false; Type = ''; Value = $null }
+        [pscustomobject]@{ Hive = $root.Name; Path = $Definition.Path; Name = $Definition.Name; Exists = $false; Type = ''; Value = $null }
     } finally { if ($key) { $key.Dispose() } }
 }
 
@@ -55,7 +75,7 @@ function Test-TuningValue($Expected, $Actual) {
 }
 
 function Set-TuningValue($Definition) {
-    $root = [Microsoft.Win32.Registry]::CurrentUser
+    $root = Get-TuningHive $Definition
     if ($Definition.Exists) {
         $key = $root.CreateSubKey($Definition.Path)
         try {
@@ -134,37 +154,116 @@ function Invoke-TuningLock([scriptblock]$Operation) {
     }
 }
 
-function Invoke-OptimizerTweak([string]$Id, [string]$Title) {
+function Get-TuningCompatibilityIssue($Definition) {
+    if ($Definition.MinimumBuild -and (Get-WindowsBuildNumber) -lt $Definition.MinimumBuild) {
+        return "Este ajuste exige uma versão mais recente do Windows (build $($Definition.MinimumBuild) ou superior)."
+    }
+    if ($Definition.RequiresPolicyEdition) {
+        $edition = Get-ItemPropertyValue -LiteralPath 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion' -Name 'EditionID' -ErrorAction Stop
+        if ($edition -notmatch '^(Professional|Enterprise|Education|IoTEnterprise)') {
+            return 'Esta política requer uma edição compatível do Windows, como Pro, Enterprise ou Education.'
+        }
+    }
+}
+
+function Assert-TuningAccess($Definition, [switch]$Undo) {
+    if (-not $Undo) {
+        $issue = Get-TuningCompatibilityIssue $Definition
+        if ($issue) { throw $issue }
+    }
+    if ($Definition.Admin) {
+        $identity = [Security.Principal.WindowsIdentity]::GetCurrent()
+        $principal = [Security.Principal.WindowsPrincipal]::new($identity)
+        if (-not $principal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) {
+            throw 'Este ajuste requer uma sessão como administrador. Use a opção na aba Recuperação e depois retorne à biblioteca.'
+        }
+    }
+}
+
+function Invoke-OptimizerTweakBatch([object[]]$Items) {
+    foreach ($item in $Items) {
+        try {
+            $message = Invoke-OptimizerTweak -Id $item.Id -Title $item.Title -Options $item.Options
+            [pscustomobject]@{ Title = $item.Title; Success = $true; Message = [string]$message }
+        } catch {
+            [pscustomobject]@{ Title = $item.Title; Success = $false; Message = $_.Exception.Message }
+        }
+    }
+}
+
+function Get-CustomTuningPlan([string]$Kind, [string]$Id, $Options) {
+    switch ($Kind) {
+        WindowsAction { Get-WindowsTuningPlan $Id $Options }
+        GameConfig { Get-GameConfigPlan $Id $Options }
+        Nvidia { Get-NvidiaTuningPlan $Id $Options }
+        default { throw 'O tipo de ajuste não é reconhecido.' }
+    }
+}
+
+function Test-CustomTuningState([string]$Kind, [string]$Id, $State) {
+    switch ($Kind) {
+        WindowsAction { Test-WindowsTuningState $Id $State }
+        GameConfig { Test-GameConfigState $Id $State }
+        Nvidia { Test-NvidiaTuningState $Id $State }
+    }
+}
+
+function Set-CustomTuningState([string]$Kind, [string]$Id, $State, $Expected) {
+    switch ($Kind) {
+        WindowsAction { Set-WindowsTuningState $Id $State $Expected }
+        GameConfig { Set-GameConfigState $Id $State $Expected }
+        Nvidia { Set-NvidiaTuningState $Id $State $Expected }
+        default { throw 'O tipo de ajuste não é reconhecido.' }
+    }
+}
+
+function Invoke-OptimizerTweak([string]$Id, [string]$Title, $Options = [pscustomobject]@{}) {
     Invoke-TuningLock {
-        $definition = Get-TuningDefinition $Id
+        $definition = Get-TuningDefinition $Id $Options
+        Assert-TuningAccess $definition
         $item = [pscustomobject]@{
             Token = [Guid]::NewGuid().ToString('N'); TimeUtc = [DateTime]::UtcNow.ToString('o'); Status = 'Pendente'
-            Id = $Id; Title = $Title; Kind = $definition.Kind; Before = $null; After = $null
+            Id = $Id; Title = $Title; Kind = $definition.Kind; Before = $null; After = $null; Options = $Options
         }
         if ($definition.Kind -eq 'Registry') {
             $item.After = @($definition.Values)
+            if (-not $item.After.Count) { throw 'O ajuste não encontrou um alvo para aplicar a alteração.' }
             $item.Before = @($item.After | ForEach-Object { Get-TuningValue $_ })
             for ($index = 0; $index -lt $item.After.Count; $index++) {
                 if (-not (Test-TuningValue $item.After[$index] $item.Before[$index])) { break }
             }
             if ($index -eq $item.After.Count) { return 'O Registro já contém os valores desse ajuste.' }
-        } else {
+        } elseif ($definition.Kind -eq 'Power') {
             $item.Before = Get-TuningPowerPlan
             $item.After = $definition.Plan
             if ($item.Before -eq $item.After) { return 'Este plano de energia já está ativo.' }
+        } else {
+            $plan = Get-CustomTuningPlan $definition.Kind $Id $Options
+            if ($null -eq $plan.Before -or $null -eq $plan.After) { throw 'O ajuste não retornou um estado aplicável.' }
+            $item.Before = $plan.Before
+            $item.After = $plan.After
+            if (Test-CustomTuningState $item.Kind $Id $item.After) { return 'A configuração solicitada já está ativa.' }
         }
         Write-TuningBackup $item
         try {
             if ($definition.Kind -eq 'Registry') {
-                foreach ($value in $item.After) { Set-TuningValue $value }
-            } else { Set-TuningPowerPlan $item.After }
+                for ($index = 0; $index -lt $item.After.Count; $index++) {
+                    $value = $item.After[$index]
+                    if (-not (Test-TuningValue $item.Before[$index] (Get-TuningValue $value))) { throw 'O valor mudou durante a aplicação. Revise a configuração e tente novamente.' }
+                    Set-TuningValue $value
+                }
+            } elseif ($definition.Kind -eq 'Power') { Set-TuningPowerPlan $item.After }
+            else { Set-CustomTuningState $item.Kind $Id $item.After $item.Before }
             $item.Status = 'Aplicado'
             Write-TuningBackup $item
         } catch {
             throw "A aplicação não foi concluída. O backup foi registrado em Recuperação. $($_.Exception.Message)"
         }
-        if ($definition.Kind -eq 'Registry') { return 'Valores salvos e verificados. Saia e entre na sessão para carregar alterações de interface, se necessário.' }
-        'Plano ativado e verificado.'
+        switch ($definition.Kind) {
+            Registry { 'Valores salvos e verificados. Algumas opções exigem reabrir o aplicativo afetado ou entrar novamente no Windows.' }
+            Power { 'Plano ativado e verificado.' }
+            default { 'Configuração aplicada e verificada. Confira no jogo quando o ajuste depender dele.' }
+        }
     }
 }
 
@@ -173,7 +272,8 @@ function Undo-OptimizerTweak([string]$Token) {
         if ($Token -notmatch '^[0-9a-f]{32}$') { throw 'Identificador de backup inválido.' }
         $item = Read-TuningBackup (Join-Path (Get-TuningFolder) ($Token + '.json'))
         if ($item.Token -ne $Token -or $item.Status -notin @('Aplicado', 'Pendente')) { throw 'Este backup já foi restaurado ou está indisponível.' }
-        $definition = Get-TuningDefinition $item.Id
+        $definition = Get-TuningDefinition $item.Id $item.Options
+        Assert-TuningAccess $definition -Undo
         if ($item.Kind -ne $definition.Kind) { throw 'O backup não corresponde ao tipo do ajuste.' }
         if ($item.Kind -eq 'Registry') {
             if (@($item.Before).Count -ne $definition.Values.Count -or @($item.After).Count -ne $definition.Values.Count) { throw 'Backup do Registro incompleto.' }
@@ -183,6 +283,8 @@ function Undo-OptimizerTweak([string]$Token) {
                 $after = $item.After[$index]
                 if ($before.Path -ne $expected.Path -or $before.Name -ne $expected.Name -or
                     $after.Path -ne $expected.Path -or $after.Name -ne $expected.Name -or
+                    (Get-TuningHive $before).Name -ne (Get-TuningHive $expected).Name -or
+                    (Get-TuningHive $after).Name -ne (Get-TuningHive $expected).Name -or
                     -not (Test-TuningValue $expected $after)) { throw 'O backup contém valores não autorizados.' }
                 $current = Get-TuningValue $expected
                 if (-not (Test-TuningValue $before $current) -and -not (Test-TuningValue $after $current)) {
@@ -190,13 +292,15 @@ function Undo-OptimizerTweak([string]$Token) {
                 }
             }
             foreach ($value in $item.Before) { Set-TuningValue $value }
-        } else {
+        } elseif ($item.Kind -eq 'Power') {
             $latest = Get-OptimizerBackups | Where-Object { $_.Kind -eq 'Power' -and $_.Status -in @('Aplicado', 'Pendente') } | Select-Object -First 1
             if ($latest.Token -ne $Token) { throw 'Restaure primeiro o ajuste de energia mais recente.' }
             $active = Get-TuningPowerPlan
             if ($item.After -ne $definition.Plan -or $item.Before -notmatch '^[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}$') { throw 'Backup do plano inválido.' }
             if ($active -ne $item.Before -and $active -ne $item.After) { throw 'O plano atual foi alterado depois deste backup.' }
             if ($active -ne $item.Before) { Set-TuningPowerPlan $item.Before }
+        } elseif (-not (Test-CustomTuningState $item.Kind $item.Id $item.Before)) {
+            Set-CustomTuningState $item.Kind $item.Id $item.Before $item.After
         }
         $item.Status = 'Restaurado'
         Write-TuningBackup $item

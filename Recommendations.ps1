@@ -9,13 +9,14 @@ function Get-GameRecommendations($Profile) {
     if ($Profile.PrimaryHz) {
         $rate = $Profile.PrimaryHz
         $reason = "A tela principal está a $rate Hz. Use um limite que o jogo sustente na cena mais pesada. Comece medindo com um valor próximo à taxa da tela e compare limites maiores se quiser priorizar resposta."
-        New-GameRecommendation 'gamefpscap' "Limite de FPS para uma tela de $rate Hz" $reason
+        $action = if ($Profile.GPUVendor -eq 'NVIDIA' -and $Profile.GpuCount -eq 1) { 'nvfpscap' } else { 'gamefpscapguide' }
+        New-GameRecommendation $action "Limite de FPS para uma tela de $rate Hz" $reason
     } else {
         New-GameRecommendation 'refresh' 'Verifique a frequência do monitor' 'O Windows não informou a frequência da tela principal. Confira a tela em que você joga antes de escolher um limite de FPS.'
     }
 
     if ($Profile.GpuCount -gt 1) {
-        New-GameRecommendation 'gamepreset' 'Confirme qual GPU renderiza o jogo' 'O Windows reportou mais de um adaptador. Em Configurações → Sistema → Tela → Elementos gráficos, confira a GPU na preferência de alto desempenho do executável. Use a GPU que o jogo realmente seleciona para avaliar as opções do driver.'
+        New-GameRecommendation 'gamegpu' 'Confirme qual GPU renderiza o jogo' 'O Windows reportou mais de um adaptador. Aplique a preferência de alto desempenho ao executável escolhido e confira no jogo qual GPU foi selecionada.'
     } else {
         switch ($Profile.GPUVendor) {
             NVIDIA { New-GameRecommendation 'gamelowlatency' 'Teste NVIDIA Reflex quando disponível' 'O scanner encontrou uma GPU NVIDIA. Em jogos compatíveis, compare com Reflex ligado usando a mesma cena e o mesmo limite de FPS.' }

@@ -17,8 +17,8 @@ foreach ($name in 'Navigation','SecondaryNav','PageCaption','PageScroll','PageBo
 }
 
 $script:color = @{
-    Text = '#EBF0F8'; Muted = '#A3B0C2'; Accent = '#C6F970'; Line = '#263247'; Panel = '#121A27'
-    Faint = '#73839A'; Blue = '#9CBFFF'; Warm = '#F9D48B'; Bad = '#FFAFA9'
+    Text = '#F0F5FC'; Muted = '#A7B7CC'; Accent = '#72EBFF'; Line = '#243149'; Panel = '#101520'
+    Faint = '#7788A1'; Blue = '#B3AFFE'; Warm = '#FFCB69'; Bad = '#FF9EBB'; Pink = '#FF65AA'; Mint = '#58EDB6'
 }
 $script:brushes = @{}
 $script:nav = @{}
@@ -32,6 +32,12 @@ $script:restorePoints = @()
 $script:restoreRead = $false
 $script:restoreError = ''
 $script:work = $null
+$script:selectedExecutable = ''
+$script:selectedGameConfig = ''
+$script:automationDefinitions = @{}
+foreach ($tweak in $script:Tweaks) {
+    if ($tweak.Mode -eq 'Auto') { $script:automationDefinitions[$tweak.Id] = Get-TuningDefinition $tweak.Id }
+}
 $script:isAdmin = [Security.Principal.WindowsPrincipal]::new([Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
 if ($script:isAdmin) { $script:ui.SessionLabel.Text = 'MODO ADMINISTRADOR' }
 
@@ -161,7 +167,7 @@ function Set-OptimizerStatus([string]$Message, [switch]$Problem) {
     $script:ui.StatusText.Foreground = Get-UBrush $(if ($Problem) { $script:color.Bad } else { $script:color.Muted })
 }
 
-function Show-OptimizerDialog([string]$Title, [string]$Copy, [string]$Accept = 'Entendi', [switch]$Confirm) {
+function Show-OptimizerDialog([string]$Title, [string]$Copy, [string]$Accept = 'Entendi', [switch]$Confirm, $Form, [scriptblock]$Validate) {
     $dialog = [Windows.Window]::new()
     $dialog.Owner = $script:window
     $dialog.Title = $Title
@@ -181,6 +187,7 @@ function Show-OptimizerDialog([string]$Title, [string]$Copy, [string]$Accept = '
     $scroll.VerticalScrollBarVisibility = 'Auto'
     $scroll.Content = New-UText $Copy 14 $script:color.Muted
     [void]$body.Children.Add($scroll)
+    if ($Form) { [void]$body.Children.Add($Form) }
     $buttons = New-UPanel -Horizontal
     $buttons.HorizontalAlignment = 'Right'
     $buttons.Margin = '0,20,0,0'
@@ -190,7 +197,7 @@ function Show-OptimizerDialog([string]$Title, [string]$Copy, [string]$Accept = '
         $cancel.Margin = '0,0,8,0'
         [void]$buttons.Children.Add($cancel)
     }
-    $okHandler = { $dialog.DialogResult = $true }.GetNewClosure()
+    $okHandler = { if (-not $Validate -or (& $Validate)) { $dialog.DialogResult = $true } }.GetNewClosure()
     $ok = New-UButton $Accept 'PrimaryButton' $okHandler
     $ok.IsDefault = $true
     [void]$buttons.Children.Add($ok)
@@ -214,7 +221,8 @@ function Start-OptimizerWork([string]$Operation, $Value, [string]$Message, [scri
             Clean { . (Join-Path $Root 'Maintenance.ps1'); Invoke-Cleanup -Preview $Value }
             RestoreList { . (Join-Path $Root 'Maintenance.ps1'); Get-OptimizerRestorePoints }
             RestoreNew { . (Join-Path $Root 'Maintenance.ps1'); New-OptimizerRestorePoint -Description 'Pulso Arena' }
-            Apply { . (Join-Path $Root 'Tuning.ps1'); Invoke-OptimizerTweak -Id $Value.Id -Title $Value.Title }
+            Apply { . (Join-Path $Root 'Tuning.ps1'); Invoke-OptimizerTweak -Id $Value.Id -Title $Value.Title -Options $Value.Options }
+            ApplyBatch { . (Join-Path $Root 'Tuning.ps1'); Invoke-OptimizerTweakBatch -Items @($Value) }
             Undo { . (Join-Path $Root 'Tuning.ps1'); Undo-OptimizerTweak -Token $Value }
         }
     }
@@ -261,67 +269,66 @@ $script:workTimer.Add_Tick({ Complete-OptimizerWork })
 
 function New-LandingArt {
     $canvas = [Windows.Controls.Canvas]::new()
-    $canvas.Width = 420
-    $canvas.Height = 240
+    $canvas.Width = 501
+    $canvas.Height = 284
     $canvas.HorizontalAlignment = 'Right'
     $canvas.VerticalAlignment = 'Center'
     $canvas.IsHitTestVisible = $false
-    $ringData = @(@{W=370; H=196; X=38; Y=22; Color='#364C3F'},@{W=299; H=150; X=73; Y=45; Color='#466245'},@{W=228; H=105; X=110; Y=67; Color='#688056'})
-    foreach ($data in $ringData) {
-        $ring = [Windows.Shapes.Ellipse]::new()
-        $ring.Width = $data.W
-        $ring.Height = $data.H
-        $ring.StrokeThickness = 1
-        $ring.Stroke = Get-UBrush $data.Color
-        $ring.RenderTransformOrigin = [Windows.Point]::new(.5,.5)
-        $ring.RenderTransform = [Windows.Media.RotateTransform]::new(-27)
-        [Windows.Controls.Canvas]::SetLeft($ring, $data.X)
-        [Windows.Controls.Canvas]::SetTop($ring, $data.Y)
-        [void]$canvas.Children.Add($ring)
+    $geometry = @(
+        @{ X=111; Y=18; W=435; H=69; R=32; Edge='#4665FE'; Light='#47BAFF' },
+        @{ X=-29; Y=81; W=426; H=69; R=34; Edge='#073CFE'; Light='#5284FF' },
+        @{ X=226; Y=144; W=350; H=69; R=34; Edge='#0BB9E8'; Light='#67F8FF' },
+        @{ X=-46; Y=207; W=454; H=68; R=34; Edge='#2723F6'; Light='#7B72FF' },
+        @{ X=387; Y=-43; W=83; H=351; R=31; Edge='#025A92'; Light='#61E8FE' }
+    )
+    foreach ($item in $geometry) {
+        $form = [Windows.Shapes.Rectangle]::new()
+        $form.Width = $item.W; $form.Height = $item.H
+        $form.RadiusX = $item.R; $form.RadiusY = $item.R
+        $form.Stroke = Get-UBrush $item.Edge
+        $form.StrokeThickness = 4
+        $glow = [Windows.Media.Effects.DropShadowEffect]::new()
+        $glow.Color = [Windows.Media.ColorConverter]::ConvertFromString($item.Light)
+        $glow.ShadowDepth = 0; $glow.BlurRadius = 23; $glow.Opacity = .72
+        $form.Effect = $glow
+        [Windows.Controls.Canvas]::SetLeft($form, $item.X)
+        [Windows.Controls.Canvas]::SetTop($form, $item.Y)
+        [void]$canvas.Children.Add($form)
+
+        $light = [Windows.Shapes.Rectangle]::new()
+        $light.Width = $item.W - 3; $light.Height = $item.H - 3
+        $light.RadiusX = $item.R; $light.RadiusY = $item.R
+        $light.Stroke = Get-UBrush $item.Light
+        $light.Opacity = .84; $light.StrokeThickness = 1.2
+        [Windows.Controls.Canvas]::SetLeft($light, $item.X + 1.5)
+        [Windows.Controls.Canvas]::SetTop($light, $item.Y + 1.5)
+        [void]$canvas.Children.Add($light)
     }
-    $signal = [Windows.Shapes.Path]::new()
-    $signal.Data = [Windows.Media.Geometry]::Parse('M0,147 L68,147 84,138 119,138 137,111 153,151 174,57 196,147 231,147 248,120 276,120 293,103 420,103 M0,164 L62,164 M302,85 L420,85')
-    $signal.Stroke = Get-UBrush '#527150'
-    $signal.StrokeThickness = 1.05
-    [void]$canvas.Children.Add($signal)
-    $mark = [Windows.Shapes.Path]::new()
-    $mark.Data = [Windows.Media.Geometry]::Parse('M91,0 L12,95 61,95 44,148 129,48 79,48 Z')
-    $mark.Fill = Get-UBrush '#C6F970'
-    $mark.Stroke = Get-UBrush '#E2FFAF'
-    $mark.StrokeThickness = 1
-    $mark.Effect = [Windows.Media.Effects.DropShadowEffect]::new()
-    $mark.Effect.Color = [Windows.Media.ColorConverter]::ConvertFromString('#96E453')
-    $mark.Effect.ShadowDepth = 0
-    $mark.Effect.BlurRadius = 41
-    $mark.Effect.Opacity = .42
-    [Windows.Controls.Canvas]::SetLeft($mark, 150)
-    [Windows.Controls.Canvas]::SetTop($mark, 43)
-    [void]$canvas.Children.Add($mark)
-    foreach ($coordinates in @(@(76,96),@(328,121),@(292,43),@(127,179))) {
-        $dot = [Windows.Shapes.Ellipse]::new()
-        $dot.Width = 5; $dot.Height = 5
-        $dot.Fill = Get-UBrush '#A9D269'
-        [Windows.Controls.Canvas]::SetLeft($dot, $coordinates[0])
-        [Windows.Controls.Canvas]::SetTop($dot, $coordinates[1])
-        [void]$canvas.Children.Add($dot)
+    foreach ($mark in @(@(371,23,'#55E8FF'),@(441,201,'#FF5DAB'),@(351,258,'#FFCB69'),@(84,126,'#43E6A6'))) {
+        $bar = [Windows.Shapes.Rectangle]::new()
+        $bar.Width = 22; $bar.Height = 3; $bar.RadiusX = 1.5; $bar.RadiusY = 1.5
+        $bar.Fill = Get-UBrush $mark[2]
+        [Windows.Controls.Canvas]::SetLeft($bar, $mark[0])
+        [Windows.Controls.Canvas]::SetTop($bar, $mark[1])
+        [void]$canvas.Children.Add($bar)
     }
     $canvas
 }
 
 function Show-HomePage {
     $hero = [Windows.Controls.Grid]::new()
-    $hero.Height = 268
+    $hero.Height = 284
     $hero.ClipToBounds = $true
     $hero.Background = [Windows.Media.LinearGradientBrush]::new(
-        [Windows.Media.ColorConverter]::ConvertFromString('#141D2D'), [Windows.Media.ColorConverter]::ConvertFromString('#1E392B'), 8)
+        [Windows.Media.ColorConverter]::ConvertFromString('#0A0E17'), [Windows.Media.ColorConverter]::ConvertFromString('#080A11'), 8)
     [void]$hero.Children.Add((New-LandingArt))
     $shade = [Windows.Controls.Border]::new()
     $shade.HorizontalAlignment = 'Left'
-    $shade.Width = 440
+    $shade.Width = 487
     $shade.Margin = '1,1,0,1'
     $shade.CornerRadius = [Windows.CornerRadius]::new(12,0,0,12)
     $shade.Background = [Windows.Media.LinearGradientBrush]::new(
-        [Windows.Media.ColorConverter]::ConvertFromString('#FF141D2D'), [Windows.Media.ColorConverter]::ConvertFromString('#00141D2D'), 0)
+        [Windows.Media.ColorConverter]::ConvertFromString('#FF0A0E17'), [Windows.Media.ColorConverter]::ConvertFromString('#000A0E17'), 0)
     [void]$hero.Children.Add($shade)
     $heroCopy = New-UPanel
     $heroCopy.Margin = '27,0,20,0'
@@ -330,10 +337,10 @@ function Show-HomePage {
     $eyebrow = New-UText 'FPS, LATÊNCIA E ESTABILIDADE' 11 $script:color.Accent 'Bold'
     $eyebrow.Margin = '1,0,0,9'
     [void]$heroCopy.Children.Add($eyebrow)
-    $headline = New-UText "Desempenho para`nseus jogos" 43 $script:color.Text 'Bold'
-    $headline.LineHeight = 44
-    $headline.LineStackingStrategy = 'BlockLineHeight'
+    $headline = New-UText 'Desempenho para' 45 $script:color.Text 'Bold'
+    $headline.Margin = '0,0,0,-7'
     [void]$heroCopy.Children.Add($headline)
+    [void]$heroCopy.Children.Add((New-UText 'seus jogos' 45 $script:color.Accent 'Bold'))
     $copy = New-UText 'Descubra quais ajustes testar primeiro com o processador, a placa de vídeo e a tela do seu PC.' 14 '#C3CEDD'
     $copy.MaxWidth = 370
     $copy.HorizontalAlignment = 'Left'
@@ -348,13 +355,13 @@ function Show-HomePage {
     }
     $open.Margin = '0,0,9,0'
     [void]$actions.Children.Add($open)
-    [void]$actions.Children.Add((New-UButton 'Ver ajustes de jogos' 'BaseButton' { $script:filter = 'Jogos'; $script:searchTerm = ''; Show-OptimizerPage 'Ajustes' }))
+    [void]$actions.Children.Add((New-UButton 'Ver ajustes automáticos' 'BaseButton' { $script:filter = 'Auto'; $script:searchTerm = ''; Show-OptimizerPage 'Ajustes' }))
     [void]$heroCopy.Children.Add($actions)
     [void]$hero.Children.Add($heroCopy)
-    $heroCard = New-UCard $hero '#172328' 0
+    $heroCard = New-UCard $hero '#0A0E17' 0
     $heroCard.Background = $hero.Background
     $hero.Background = $null
-    $heroCard.BorderBrush = Get-UBrush '#3C5648'
+    $heroCard.BorderBrush = Get-UBrush '#293C63'
     Add-PageItem $heroCard
 
     $hardwareDetail = if ($script:scan) { 'Dados do scanner local' } else { 'Verificação local do hardware' }
@@ -362,14 +369,14 @@ function Show-HomePage {
     $hardware = New-UGrid 3
     $summary = if ($script:scan) { $script:scan.Summary } else { [pscustomobject]@{ CPU='A detectar'; GPU='A detectar'; RAM='A detectar' } }
     $hardwareItems = @(
-        @{ Icon='cpu'; Label='PROCESSADOR'; Value=$summary.CPU },
-        @{ Icon='gpu'; Label='PLACA DE VÍDEO'; Value=$summary.GPU },
-        @{ Icon='ram'; Label='MEMÓRIA'; Value=$summary.RAM }
+        @{ Icon='cpu'; Label='PROCESSADOR'; Value=$summary.CPU; Hue=$script:color.Accent },
+        @{ Icon='gpu'; Label='PLACA DE VÍDEO'; Value=$summary.GPU; Hue=$script:color.Blue },
+        @{ Icon='ram'; Label='MEMÓRIA'; Value=$summary.RAM; Hue=$script:color.Mint }
     )
     foreach ($item in $hardwareItems) {
         $part = New-UPanel
         $labelRow = New-UPanel -Horizontal
-        $icon = New-UIcon $item.Icon $script:color.Accent 17
+        $icon = New-UIcon $item.Icon $item.Hue 17
         $icon.Margin = '0,0,8,0'
         [void]$labelRow.Children.Add($icon)
         [void]$labelRow.Children.Add((New-UText $item.Label 10 $script:color.Muted 'SemiBold'))
@@ -383,12 +390,12 @@ function Show-HomePage {
     Add-PageSection 'Ferramentas'
     $toolsGrid = New-UGrid 3
     foreach ($item in @(
-        @{ Icon='tune'; Title='Biblioteca de ajustes'; Copy="$($script:Tweaks.Count) ajustes gratuitos para jogos, Windows, vídeo, rede e entrada."; Page='Ajustes'; Action='Abrir biblioteca' },
-        @{ Icon='clean'; Title='Limpeza do sistema'; Copy='Confira arquivos temporários e o espaço recuperável antes de excluir.'; Page='Limpeza'; Action='Analisar arquivos' },
-        @{ Icon='shield'; Title='Ponto de restauração'; Copy='Crie um ponto do Windows e reverta ajustes automáticos pelo histórico local.'; Page='Recuperação'; Action='Abrir recuperação' }
+        @{ Icon='tune'; Hue=$script:color.Blue; Title='Biblioteca de ajustes'; Copy="$($script:Tweaks.Count) ajustes gratuitos para jogos, Windows, vídeo, rede e entrada."; Page='Ajustes'; Action='Abrir biblioteca' },
+        @{ Icon='clean'; Hue=$script:color.Pink; Title='Limpeza do sistema'; Copy='Confira arquivos temporários e o espaço recuperável antes de excluir.'; Page='Limpeza'; Action='Analisar arquivos' },
+        @{ Icon='shield'; Hue=$script:color.Warm; Title='Ponto de restauração'; Copy='Crie um ponto do Windows e reverta ajustes automáticos pelo histórico local.'; Page='Recuperação'; Action='Abrir recuperação' }
     )) {
         $column = New-UPanel
-        [void]$column.Children.Add((New-UIcon $item.Icon $script:color.Blue 20))
+        [void]$column.Children.Add((New-UIcon $item.Icon $item.Hue 20))
         $column.Children[0].HorizontalAlignment = 'Left'
         $title = New-UText $item.Title 16 $script:color.Text 'SemiBold'
         $title.Margin = '0,8,0,4'
@@ -418,23 +425,165 @@ function Open-OptimizerTarget([string]$Target) {
     } catch { [void](Show-OptimizerDialog 'Não foi possível abrir' $_.Exception.Message) }
 }
 
+function Select-OptimizerGameFile([string]$Property, [string]$Current, [Windows.Window]$Owner) {
+    $picker = [Microsoft.Win32.OpenFileDialog]::new()
+    $picker.CheckFileExists = $true
+    $picker.CheckPathExists = $true
+    $picker.Multiselect = $false
+    if ($Property -eq 'ConfigPath') {
+        $picker.Title = 'Escolher GameUserSettings.ini do jogo'
+        $picker.Filter = 'Configuração Unreal (GameUserSettings.ini)|GameUserSettings.ini'
+        $picker.InitialDirectory = [Environment]::GetFolderPath('LocalApplicationData')
+    } else {
+        $picker.Title = 'Escolher o executável principal do jogo'
+        $picker.Filter = 'Executável do jogo (*.exe)|*.exe'
+    }
+    if ($Current -and [IO.File]::Exists($Current)) {
+        $picker.InitialDirectory = [IO.Path]::GetDirectoryName($Current)
+        $picker.FileName = [IO.Path]::GetFileName($Current)
+    }
+    if (-not $Owner) { $Owner = $script:window }
+    if ($picker.ShowDialog($Owner)) { $picker.FileName }
+}
+
+function Add-OptimizerFilePicker($Form, $Options, [string]$Property, [string]$Caption) {
+    $title = New-UText $Caption 12 $script:color.Text 'SemiBold'
+    $title.Margin = '0,11,0,5'
+    [void]$Form.Children.Add($title)
+    $row = [Windows.Controls.DockPanel]::new()
+    $location = New-UText 'Nenhum arquivo selecionado' 12 $script:color.Muted
+    $location.TextWrapping = 'NoWrap'
+    $location.TextTrimming = 'CharacterEllipsis'
+    $location.VerticalAlignment = 'Center'
+    if ($Options.$Property) { $location.Text = $Options.$Property; $location.ToolTip = $Options.$Property }
+    $pick = {
+        $path = Select-OptimizerGameFile $Property $Options.$Property ([Windows.Window]::GetWindow($location))
+        if ($path) { $Options.$Property = $path; $location.Text = $path; $location.ToolTip = $path }
+    }.GetNewClosure()
+    $choose = New-UButton 'Escolher arquivo' 'ChipButton' $pick
+    [Windows.Automation.AutomationProperties]::SetName($choose, "Escolher arquivo · $Caption")
+    $choose.Margin = '12,0,0,0'
+    [Windows.Controls.DockPanel]::SetDock($choose, 'Right')
+    [void]$row.Children.Add($choose)
+    [void]$row.Children.Add($location)
+    [void]$Form.Children.Add($row)
+}
+
+function Show-AutomaticTweak($Tweak, [string]$Copy) {
+    if ($script:work) { Set-OptimizerStatus 'Aguarde a operação em andamento.'; return }
+    $definition = $script:automationDefinitions[$Tweak.Id]
+    $issue = Get-TuningCompatibilityIssue $definition
+    if ($issue) {
+        [void](Show-OptimizerDialog 'Ajuste indisponível nesta versão do Windows' $issue)
+        return
+    }
+    if ($definition.Admin -and -not $script:isAdmin) {
+        if (Show-OptimizerDialog $Tweak.Title "$Copy`n`nEste ajuste requer acesso de administrador. Em Recuperação, use Reabrir como administrador." 'Abrir Recuperação' -Confirm) {
+            Show-OptimizerPage 'Recuperação'
+        }
+        return
+    }
+    $inputMode = [string]$definition.Input
+    $options = [pscustomobject]@{ Executable = ''; ConfigPath = ''; Fps = $null }
+    $form = New-UPanel
+    if ($inputMode -like 'Executable*') {
+        $options.Executable = $script:selectedExecutable
+        Add-OptimizerFilePicker $form $options 'Executable' 'Executável principal do jogo (.exe)'
+    }
+    if ($inputMode -like 'GameConfig*') {
+        $options.ConfigPath = $script:selectedGameConfig
+        Add-OptimizerFilePicker $form $options 'ConfigPath' 'Configuração local do jogo (GameUserSettings.ini)'
+        $hint = New-UText 'Procure na pasta Saved\Config do jogo em %LOCALAPPDATA% ou em Documentos\My Games.' 11 $script:color.Muted
+        $hint.Margin = '0,5,0,0'
+        [void]$form.Children.Add($hint)
+    }
+    $fpsBox = $null
+    $minimum = 30; $maximum = 1000
+    if ($Tweak.Id -eq 'framecap') { $maximum = 360 }
+    if ($inputMode -like '*Fps') {
+        if ($definition.MinFps) { $minimum = $definition.MinFps }
+        if ($definition.MaxFps) { $maximum = $definition.MaxFps }
+        $fpsLabel = New-UText "Limite de quadros ($minimum a $maximum FPS)" 12 $script:color.Text 'SemiBold'
+        $fpsLabel.Margin = '0,11,0,5'
+        [void]$form.Children.Add($fpsLabel)
+        $fpsBox = [Windows.Controls.TextBox]::new()
+        $fpsBox.Style = $script:window.FindResource([Windows.Controls.TextBox])
+        $fpsBox.Width = 122
+        $fpsBox.HorizontalAlignment = 'Left'
+        $fpsBox.MaxLength = 4
+        [Windows.Automation.AutomationProperties]::SetName($fpsBox, $fpsLabel.Text)
+        $refresh = if ($script:scan -and $script:scan.Profile.PrimaryHz) { $script:scan.Profile.PrimaryHz } else { 60 }
+        $fpsBox.Text = [string][Math]::Max($minimum, [Math]::Min($maximum, $refresh))
+        [void]$form.Children.Add($fpsBox)
+    }
+    $errorLabel = New-UText '' 12 $script:color.Bad
+    $errorLabel.Margin = '0,7,0,0'
+    $errorLabel.Visibility = 'Collapsed'
+    [void]$form.Children.Add($errorLabel)
+    $validate = {
+        $message = ''
+        $number = 0
+        if ($inputMode -like 'Executable*' -and -not [IO.File]::Exists($options.Executable)) { $message = 'Escolha o executável principal do jogo.' }
+        elseif ($inputMode -like 'GameConfig*' -and -not [IO.File]::Exists($options.ConfigPath)) { $message = 'Escolha um GameUserSettings.ini compatível.' }
+        elseif ($fpsBox -and (-not [int]::TryParse($fpsBox.Text, [ref]$number) -or $number -lt $minimum -or $number -gt $maximum)) {
+            $message = "Digite um valor inteiro entre $minimum e $maximum FPS."
+        }
+        $errorLabel.Text = $message
+        $errorLabel.Visibility = if ($message) { 'Visible' } else { 'Collapsed' }
+        if ($message) { return $false }
+        if ($fpsBox) { $options.Fps = $number }
+        $true
+    }.GetNewClosure()
+    $copy += "`n`nA configuração anterior fica no histórico de Recuperação."
+    if (-not (Show-OptimizerDialog $Tweak.Title $Copy 'Aplicar ajuste' -Confirm -Form $form -Validate $validate)) { return }
+    if ($options.Executable) { $script:selectedExecutable = $options.Executable }
+    if ($options.ConfigPath) { $script:selectedGameConfig = $options.ConfigPath }
+    $payload = [pscustomobject]@{ Id = $Tweak.Id; Title = $Tweak.Title; Options = $options }
+    Start-OptimizerWork 'Apply' $payload 'Aplicando e verificando o ajuste…' {
+        param($Result)
+        Set-OptimizerStatus ([string]$Result[0])
+        [void](Show-OptimizerDialog 'Ajuste verificado' ([string]$Result[0]))
+    }
+}
+
 function Show-TweakDetails($Tweak) {
     $copy = "$($Tweak.Summary)`n`n$($Tweak.Instructions)"
     switch ($Tweak.Mode) {
-        Auto {
-            if ($script:work) { Set-OptimizerStatus 'Aguarde a operação em andamento.'; return }
-            $copy += "`n`nUma cópia da configuração anterior fica em Recuperação para você poder desfazer o ajuste."
-            if (Show-OptimizerDialog $Tweak.Title $copy 'Aplicar ajuste' -Confirm) {
-                Start-OptimizerWork 'Apply' $Tweak 'Aplicando e verificando o ajuste…' {
-                    param($Result)
-                    Set-OptimizerStatus ([string]$Result[0])
-                    [void](Show-OptimizerDialog 'Ajuste verificado' ([string]$Result[0]))
-                }
-            }
-        }
+        Auto { Show-AutomaticTweak $Tweak $copy }
         Windows { if (Show-OptimizerDialog $Tweak.Title $copy 'Abrir configurações' -Confirm) { Open-OptimizerTarget $Tweak.Target } }
         Link { if (Show-OptimizerDialog $Tweak.Title $copy 'Abrir site oficial' -Confirm) { Open-OptimizerTarget $Tweak.Target } }
         Manual { [void](Show-OptimizerDialog $Tweak.Title $copy) }
+    }
+}
+
+function Show-GeneralOptimizationPack {
+    if ($script:work) { Set-OptimizerStatus 'Aguarde a operação em andamento.'; return }
+    $form = New-UPanel
+    $boxes = foreach ($id in 'gamemode', 'transparency', 'winanimations', 'dvr') {
+        $tweak = $script:Tweaks | Where-Object Id -eq $id | Select-Object -First 1
+        $check = [Windows.Controls.CheckBox]::new()
+        $check.Content = $tweak.Title
+        $check.Foreground = Get-UBrush $script:color.Text
+        $check.Margin = '0,9,0,0'
+        $check.IsChecked = $id -eq 'gamemode' -or $id -eq 'transparency'
+        [void]$form.Children.Add($check)
+        $detail = New-UText $tweak.Summary 12 $script:color.Muted
+        $detail.Margin = '18,3,0,0'
+        [void]$form.Children.Add($detail)
+        [pscustomobject]@{ Check = $check; Tweak = $tweak }
+    }
+    $validator = { [bool]($boxes | Where-Object { $_.Check.IsChecked } | Select-Object -First 1) }.GetNewClosure()
+    $copy = 'Escolha os ajustes do Windows que quer aplicar de uma vez. Cada alteração pode ser desfeita pelo histórico em Recuperação.'
+    if (-not (Show-OptimizerDialog 'Pacote básico para jogos' $copy 'Aplicar selecionados' -Confirm -Form $form -Validate $validator)) { return }
+    $payload = @($boxes | Where-Object { $_.Check.IsChecked } | ForEach-Object {
+        [pscustomobject]@{ Id = $_.Tweak.Id; Title = $_.Tweak.Title; Options = [pscustomobject]@{} }
+    })
+    Start-OptimizerWork 'ApplyBatch' $payload 'Aplicando os ajustes selecionados…' {
+        param($Result)
+        $problems = @($Result | Where-Object { -not $_.Success }).Count
+        Set-OptimizerStatus "Pacote processado · $problems com erro." -Problem:($problems -gt 0)
+        $lines = $Result | ForEach-Object { "$($_.Title)`n$($_.Message)" }
+        [void](Show-OptimizerDialog 'Resultado do pacote' ($lines -join "`n`n"))
     }
 }
 
@@ -445,9 +594,15 @@ function Update-TweakCards {
     $culture = [Globalization.CultureInfo]::GetCultureInfo('pt-BR').CompareInfo
     $comparison = [Globalization.CompareOptions]::IgnoreNonSpace -bor [Globalization.CompareOptions]::IgnoreCase
     $shown = 0
-    foreach ($tweak in $script:Tweaks) {
+    $catalog = $script:Tweaks
+    if ($script:filter -eq 'Auto') {
+        $catalog = @($script:Tweaks | Where-Object Mode -eq 'Auto')
+        $platform = @($catalog | Where-Object { $script:automationDefinitions[$_.Id].Kind -in @('Registry', 'Power', 'WindowsAction') })
+        $contextual = @($catalog | Where-Object { $script:automationDefinitions[$_.Id].Kind -in @('Nvidia', 'GameConfig') })
+        $catalog = $platform + $contextual
+    }
+    foreach ($tweak in $catalog) {
         if ($script:filter -eq 'Destaques' -and -not $tweak.Featured) { continue }
-        if ($script:filter -eq 'Auto' -and $tweak.Mode -ne 'Auto') { continue }
         if ($script:filter -notin @('Todos','Destaques','Auto') -and $script:filter -ne $tweak.Category) { continue }
         $haystack = "$($tweak.Title) $($tweak.Summary) $($tweak.Instructions) $($tweak.Category) $($script:modeLabels[$tweak.Mode])"
         $matches = $true
@@ -456,7 +611,14 @@ function Update-TweakCards {
         $shown++
         $column = New-UPanel
         $metaColor = if ($tweak.Mode -eq 'Auto') { $script:color.Accent } else { $script:color.Blue }
-        $meta = New-UText "$($script:categoryLabels[$tweak.Category])  /  $($script:modeLabels[$tweak.Mode])" 11 $metaColor 'SemiBold'
+        $typeLabel = $script:modeLabels[$tweak.Mode]
+        if ($tweak.Mode -eq 'Auto') {
+            $type = $script:automationDefinitions[$tweak.Id]
+            if ($type.Kind -eq 'Nvidia') { $typeLabel += ' · NVIDIA' }
+            elseif ($type.Kind -eq 'GameConfig' -and -not $type.Fortnite) { $typeLabel += ' · Unreal' }
+            if ($type.Admin) { $typeLabel += ' · Admin' }
+        }
+        $meta = New-UText "$($script:categoryLabels[$tweak.Category])  /  $typeLabel" 11 $metaColor 'SemiBold'
         [void]$column.Children.Add($meta)
         $title = New-UText $tweak.Title 17 $script:color.Text 'SemiBold'
         $title.Margin = '0,5,0,4'
@@ -481,16 +643,20 @@ function Select-TweakFilter([string]$Category) {
     $script:filter = $Category
     foreach ($key in $script:filterButtons.Keys) {
         $button = $script:filterButtons[$key]
-        $button.Background = Get-UBrush $(if ($key -eq $Category) { '#293C2B' } else { '#192332' })
+        $button.Background = Get-UBrush $(if ($key -eq $Category) { '#132943' } else { '#151D2D' })
         $button.Foreground = Get-UBrush $(if ($key -eq $Category) { $script:color.Accent } else { $script:color.Muted })
-        $button.BorderBrush = Get-UBrush $(if ($key -eq $Category) { '#5C8050' } else { '#2B3A50' })
+        $button.BorderBrush = Get-UBrush $(if ($key -eq $Category) { '#4885AD' } else { '#2B3A50' })
     }
     Update-TweakCards
 }
 
 function Show-TweaksPage {
-    $autoCount = @($script:Tweaks | Where-Object Mode -eq 'Auto').Count
+    $autoCount = $script:automationDefinitions.Count
     Add-PageIntro 'Biblioteca de ajustes' "$($script:Tweaks.Count) opções gratuitas · $autoCount aplicáveis no app, com instruções para as demais."
+    $batch = New-UButton 'Revisar pacote básico' 'PrimaryButton' { Show-GeneralOptimizationPack }
+    $batch.HorizontalAlignment = 'Left'
+    $batch.Margin = '0,0,0,15'
+    Add-PageItem $batch
     $search = [Windows.Controls.TextBox]::new()
     [Windows.Automation.AutomationProperties]::SetName($search, 'Buscar por nome, descrição ou termo')
     $search.ToolTip = 'Busque por FPS, Reflex, inicialização ou qualquer termo.'
@@ -567,8 +733,9 @@ function Add-ProfileRecommendations($Profile) {
         if ($item.Id -in $script:Tweaks.Id) {
             $tweakId = $item.Id
             $open = { Open-RecommendedTweak $tweakId }.GetNewClosure()
-            $action = New-UButton 'Ver instruções' 'ChipButton' $open
-            [Windows.Automation.AutomationProperties]::SetName($action, "Ver instruções · $($item.Title)")
+            $label = if ($script:automationDefinitions.ContainsKey($tweakId)) { 'Revisar e aplicar' } else { 'Ver instruções' }
+            $action = New-UButton $label 'ChipButton' $open
+            [Windows.Automation.AutomationProperties]::SetName($action, "$label · $($item.Title)")
             $action.HorizontalAlignment = 'Left'
             $action.Margin = '0,10,0,0'
             [void]$column.Children.Add($action)
@@ -709,8 +876,8 @@ function Show-CleanupResult {
     $go.HorizontalAlignment = 'Left'
     $go.IsEnabled = $item.Count -gt 0
     [void]$column.Children.Add($go)
-    $card = New-UCard $column '#17231E'
-    $card.BorderBrush = Get-UBrush '#3B5340'
+    $card = New-UCard $column '#10202D'
+    $card.BorderBrush = Get-UBrush '#325275'
     [void]$script:cleanupDetails.Children.Add($card)
 }
 
@@ -859,6 +1026,10 @@ function Show-RecoveryPage {
         $time = ([DateTimeOffset]::Parse($backup.TimeUtc)).ToLocalTime().ToString('dd/MM/yyyy HH:mm')
         [void]$details.Children.Add((New-UText $backup.Title 15 $script:color.Text 'SemiBold'))
         [void]$details.Children.Add((New-UText "$time · $($backup.Status)" 12 $script:color.Muted))
+        if ($backup.Options) {
+            $subject = if ($backup.Options.Executable) { $backup.Options.Executable } else { $backup.Options.ConfigPath }
+            if ($subject) { [void]$details.Children.Add((New-UText $subject 11 $script:color.Muted)) }
+        }
         [void]$row.Children.Add($details)
         $card = New-UCard $row $script:color.Panel 12
         $card.Margin = '0,0,0,8'
@@ -886,9 +1057,9 @@ function Show-OptimizerPage([string]$Name, [switch]$KeepScroll) {
     $script:ui.PageCaption.Text = $Name
     foreach ($key in $script:nav.Keys) {
         $button = $script:nav[$key]
-        $button.Background = Get-UBrush $(if ($key -eq $Name) { '#233329' } else { '#00101621' })
-        $button.BorderBrush = Get-UBrush $(if ($key -eq $Name) { '#455D43' } else { '#00101621' })
-        $button.Foreground = Get-UBrush $(if ($key -eq $Name) { '#DAFFA3' } else { '#AFBCCF' })
+        $button.Background = Get-UBrush $(if ($key -eq $Name) { '#14273B' } else { '#000C101A' })
+        $button.BorderBrush = Get-UBrush $(if ($key -eq $Name) { '#366485' } else { '#000C101A' })
+        $button.Foreground = Get-UBrush $(if ($key -eq $Name) { '#9BF3FF' } else { '#AFBCCF' })
     }
     $script:ui.PageBody.Children.Clear()
     switch ($Name) {
@@ -952,6 +1123,14 @@ function Wait-OptimizerSelfTestWork {
 }
 
 if ($SelfTest) {
+    $generalCount = @($script:Tweaks | Where-Object Category -ne 'Fortnite').Count
+    $generalAutomatic = @($script:Tweaks | Where-Object { $_.Category -ne 'Fortnite' -and $_.Mode -eq 'Auto' }).Count
+    if ($script:automationDefinitions.Count * 2 -le $script:Tweaks.Count -or $generalAutomatic * 2 -le $generalCount) {
+        throw 'A biblioteca deve ter maioria automática, incluindo a seleção sem Fortnite.'
+    }
+    if (@($script:Tweaks.Id | Sort-Object -Unique).Count -ne $script:Tweaks.Count) { throw 'Há IDs duplicados na biblioteca.' }
+    if ($script:automationDefinitions.gamegpu.Input -ne 'Executable' -or $script:automationDefinitions.gamefpscap.Input -ne 'GameConfigFps' -or
+        $script:automationDefinitions.nvfpscap.Input -ne 'ExecutableFps') { throw 'Faltam controles de seleção de jogo em ajustes automáticos.' }
     Show-OptimizerPage 'Visão geral'
     $script:window.Show()
     try {
@@ -963,6 +1142,9 @@ if ($SelfTest) {
         Show-OptimizerPage 'Ajustes'
         Write-OptimizerCapture '02-ajustes'
         if ($script:tweakGrid.Children.Count -lt 15) { throw 'Filtro de jogos incompleto.' }
+        Select-TweakFilter 'Auto'
+        if ($script:tweakGrid.Children.Count -ne $script:automationDefinitions.Count) { throw 'Filtro de ajustes automáticos incompleto.' }
+        Write-OptimizerCapture '07-automaticos'
         $script:filter = 'Fortnite'
         Show-OptimizerPage 'Ajustes'
         if ($script:tweakGrid.Children.Count -lt 8) { throw 'Filtro Fortnite incompleto.' }
@@ -996,7 +1178,7 @@ if ($SelfTest) {
         Show-OptimizerPage 'Visão geral'
         Set-OptimizerStatus 'Verificação concluída.'
         Write-OptimizerCapture '01-visao-geral'
-        "OK: $($script:Tweaks.Count) ajustes, $($script:scan.Groups.Count) grupos detectados, $($script:preview.Count) arquivos elegíveis na prévia."
+        "OK: $($script:automationDefinitions.Count)/$($script:Tweaks.Count) automáticos; $generalAutomatic/$generalCount fora do Fortnite; $($script:scan.Groups.Count) grupos de hardware."
     } finally { $script:window.Close() }
 } else {
     Show-OptimizerPage $(if ($OpenRecovery) { 'Recuperação' } else { 'Visão geral' })

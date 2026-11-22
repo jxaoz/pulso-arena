@@ -1,16 +1,16 @@
 <Window xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" Title="Pulso Arena" Width="1280" Height="850"
         MinWidth="1000" MinHeight="680" WindowStartupLocation="CenterScreen"
-        Background="#0C1018" Foreground="#EBF0F8" FontFamily="Segoe UI" FontSize="14"
+        Background="#080A11" Foreground="#F0F5FC" FontFamily="Segoe UI Variable Text, Segoe UI" FontSize="14"
         TextOptions.TextFormattingMode="Display" UseLayoutRounding="True" SnapsToDevicePixels="True">
   <Window.Resources>
-    <SolidColorBrush x:Key="Accent" Color="#C6F970"/>
-    <SolidColorBrush x:Key="Foreground" Color="#EBF0F8"/>
-    <SolidColorBrush x:Key="Muted" Color="#A3B0C2"/>
-    <SolidColorBrush x:Key="Line" Color="#263247"/>
+    <SolidColorBrush x:Key="Accent" Color="#72EBFF"/>
+    <SolidColorBrush x:Key="Foreground" Color="#F0F5FC"/>
+    <SolidColorBrush x:Key="Muted" Color="#A7B7CC"/>
+    <SolidColorBrush x:Key="Line" Color="#243149"/>
     <Style TargetType="Button" x:Key="BaseButton">
-      <Setter Property="Background" Value="#192332"/>
-      <Setter Property="Foreground" Value="#EBF0F8"/>
+      <Setter Property="Background" Value="#151D2D"/>
+      <Setter Property="Foreground" Value="#F0F5FC"/>
       <Setter Property="BorderBrush" Value="#2B3A50"/>
       <Setter Property="BorderThickness" Value="1"/>
       <Setter Property="Padding" Value="15,9"/>
@@ -26,9 +26,9 @@
               <ContentPresenter HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}" VerticalAlignment="{TemplateBinding VerticalContentAlignment}" RecognizesAccessKey="True"/>
             </Border>
             <ControlTemplate.Triggers>
-              <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="Frame" Property="Opacity" Value=".79"/><Setter TargetName="Frame" Property="BorderBrush" Value="#A8CF71"/></Trigger>
+              <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="Frame" Property="Opacity" Value=".86"/><Setter TargetName="Frame" Property="BorderBrush" Value="#72EBFF"/></Trigger>
               <Trigger Property="IsPressed" Value="True"><Setter TargetName="Frame" Property="Opacity" Value=".64"/></Trigger>
-              <Trigger Property="IsKeyboardFocused" Value="True"><Setter TargetName="Frame" Property="BorderBrush" Value="#C6F970"/></Trigger>
+              <Trigger Property="IsKeyboardFocused" Value="True"><Setter TargetName="Frame" Property="BorderBrush" Value="#B3AFFE"/></Trigger>
               <Trigger Property="IsEnabled" Value="False"><Setter TargetName="Frame" Property="Opacity" Value=".43"/></Trigger>
             </ControlTemplate.Triggers>
           </ControlTemplate>
@@ -36,7 +36,8 @@
       </Setter>
     </Style>
     <Style x:Key="PrimaryButton" TargetType="Button" BasedOn="{StaticResource BaseButton}">
-      <Setter Property="Background" Value="#C6F970"/><Setter Property="Foreground" Value="#14200D"/><Setter Property="BorderBrush" Value="#C6F970"/>
+      <Setter Property="Background"><Setter.Value><LinearGradientBrush StartPoint="0,0" EndPoint="1,1"><GradientStop Color="#85EEFF" Offset="0"/><GradientStop Color="#57CAFC" Offset="1"/></LinearGradientBrush></Setter.Value></Setter>
+      <Setter Property="Foreground" Value="#051421"/><Setter Property="BorderBrush" Value="#96F9FF"/>
     </Style>
     <Style x:Key="NavButton" TargetType="Button" BasedOn="{StaticResource BaseButton}">
       <Setter Property="Background" Value="Transparent"/><Setter Property="Foreground" Value="#AFBCCF"/><Setter Property="BorderBrush" Value="Transparent"/>
@@ -47,14 +48,14 @@
     </Style>
     <Style TargetType="TextBox">
       <Setter Property="Foreground" Value="#EEF3FA"/><Setter Property="Background" Value="#141D2B"/><Setter Property="BorderBrush" Value="#334259"/>
-      <Setter Property="CaretBrush" Value="#C6F970"/><Setter Property="Padding" Value="11,7"/><Setter Property="FontSize" Value="14"/>
+      <Setter Property="CaretBrush" Value="#72EBFF"/><Setter Property="Padding" Value="11,7"/><Setter Property="FontSize" Value="14"/>
       <Setter Property="Template">
         <Setter.Value>
           <ControlTemplate TargetType="TextBox">
             <Border x:Name="Frame" CornerRadius="8" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="1" Padding="{TemplateBinding Padding}">
               <ScrollViewer x:Name="PART_ContentHost"/>
             </Border>
-            <ControlTemplate.Triggers><Trigger Property="IsKeyboardFocused" Value="True"><Setter TargetName="Frame" Property="BorderBrush" Value="#C6F970"/></Trigger></ControlTemplate.Triggers>
+            <ControlTemplate.Triggers><Trigger Property="IsKeyboardFocused" Value="True"><Setter TargetName="Frame" Property="BorderBrush" Value="#72EBFF"/></Trigger></ControlTemplate.Triggers>
           </ControlTemplate>
         </Setter.Value>
       </Setter>
@@ -68,7 +69,7 @@
           <Setter Property="Template">
             <Setter.Value>
               <ControlTemplate TargetType="ScrollBar">
-                <Grid Background="#101621">
+                <Grid Background="#0C101A">
                   <Track x:Name="PART_Track" IsDirectionReversed="True">
                     <Track.DecreaseRepeatButton><RepeatButton Command="ScrollBar.PageUpCommand" Focusable="False" Template="{StaticResource ScrollPage}"/></Track.DecreaseRepeatButton>
                     <Track.Thumb>
@@ -91,13 +92,16 @@
       </Style.Triggers>
     </Style>
   </Window.Resources>
-  <Grid Background="#0C1018">
+  <Grid Background="#080A11">
     <Grid.ColumnDefinitions><ColumnDefinition Width="224"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
-    <Border Background="#101621" BorderBrush="#253044" BorderThickness="0,0,1,0">
+    <Border Background="#0C101A" BorderBrush="#242E47" BorderThickness="0,0,1,0">
       <DockPanel LastChildFill="False" Margin="18,25,18,20">
         <StackPanel DockPanel.Dock="Top" Margin="5,0,0,35" Orientation="Horizontal">
-          <Border Width="38" Height="38" CornerRadius="10" Background="#C6F970" Margin="0,0,10,0">
-            <Path Fill="#17240F" Data="M12,0 L2,13 L8,13 L6,22 L18,8 L12,8 L14,0 Z" Stretch="Uniform" Width="17" Height="22"/>
+          <Border Width="38" Height="38" CornerRadius="11" Background="#151A2A" BorderBrush="#337496" BorderThickness="1" Margin="0,0,10,0">
+            <Grid>
+              <Rectangle Width="21" Height="8" RadiusX="4" RadiusY="4" Stroke="#72EBFF" StrokeThickness="2" Margin="0,0,5,9"/>
+              <Rectangle Width="21" Height="8" RadiusX="4" RadiusY="4" Stroke="#7771FF" StrokeThickness="2" Margin="5,9,0,0"/>
+            </Grid>
           </Border>
           <StackPanel VerticalAlignment="Center">
             <TextBlock Text="Pulso Arena" FontSize="19" FontWeight="Bold"/>
@@ -109,7 +113,7 @@
           <StackPanel x:Name="SecondaryNav"/>
           <Border BorderBrush="#29364A" BorderThickness="0,1,0,0" Margin="2,12,2,0" Padding="8,15,0,0">
             <StackPanel Orientation="Horizontal">
-              <Ellipse Width="7" Height="7" Fill="#B9F476" VerticalAlignment="Center" Margin="0,0,9,0"/>
+              <Ellipse Width="7" Height="7" Fill="#58EDB6" VerticalAlignment="Center" Margin="0,0,9,0"/>
               <TextBlock Text="Processamento local" Foreground="#A3B0C2" FontSize="12"/>
             </StackPanel>
           </Border>
@@ -118,10 +122,10 @@
     </Border>
     <Grid Grid.Column="1">
       <Grid.RowDefinitions><RowDefinition Height="69"/><RowDefinition Height="*"/><RowDefinition Height="41"/></Grid.RowDefinitions>
-      <Border Grid.Row="0" BorderBrush="#222C3E" BorderThickness="0,0,0,1" Background="#0F151F" Padding="31,0">
+      <Border Grid.Row="0" BorderBrush="#222C3E" BorderThickness="0,0,0,1" Background="#0C101A" Padding="31,0">
         <DockPanel LastChildFill="True">
-          <Border DockPanel.Dock="Right" BorderBrush="#33434A" BorderThickness="1" Background="#172421" CornerRadius="12" Padding="10,4" VerticalAlignment="Center">
-            <TextBlock x:Name="SessionLabel" Foreground="#C6F970" Text="WINDOWS · 64 BITS" FontSize="10" FontWeight="SemiBold"/>
+          <Border DockPanel.Dock="Right" BorderBrush="#294E67" BorderThickness="1" Background="#101F2B" CornerRadius="12" Padding="10,4" VerticalAlignment="Center">
+            <TextBlock x:Name="SessionLabel" Foreground="#72EBFF" Text="WINDOWS · 64 BITS" FontSize="10" FontWeight="SemiBold"/>
           </Border>
           <TextBlock x:Name="PageCaption" Text="Visão geral" VerticalAlignment="Center" FontSize="15" FontWeight="SemiBold"/>
         </DockPanel>
@@ -129,9 +133,9 @@
       <ScrollViewer x:Name="PageScroll" Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Focusable="False">
         <StackPanel x:Name="PageBody" Margin="30,25,30,26"/>
       </ScrollViewer>
-      <Border Grid.Row="2" Background="#101621" BorderBrush="#253044" BorderThickness="0,1,0,0" Padding="30,0">
+      <Border Grid.Row="2" Background="#0C101A" BorderBrush="#253044" BorderThickness="0,1,0,0" Padding="30,0">
         <DockPanel>
-          <ProgressBar x:Name="WorkIndicator" DockPanel.Dock="Right" Width="82" Height="4" Margin="15,0,0,0" IsIndeterminate="True" Foreground="#C6F970" Visibility="Collapsed"/>
+          <ProgressBar x:Name="WorkIndicator" DockPanel.Dock="Right" Width="82" Height="4" Margin="15,0,0,0" IsIndeterminate="True" Foreground="#72EBFF" Visibility="Collapsed"/>
           <TextBlock x:Name="StatusText" Text="Pronto" Foreground="#A3B0C2" FontSize="12" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
         </DockPanel>
       </Border>
