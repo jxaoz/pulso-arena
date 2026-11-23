@@ -11,8 +11,8 @@ using System.Windows.Forms;
 [assembly: AssemblyTitle("PrismaFrame")]
 [assembly: AssemblyProduct("PrismaFrame")]
 [assembly: AssemblyDescription("Otimizador de desempenho para jogos no Windows")]
-[assembly: AssemblyVersion("1.2.0.0")]
-[assembly: AssemblyFileVersion("1.2.0.0")]
+[assembly: AssemblyVersion("1.3.0.0")]
+[assembly: AssemblyFileVersion("1.3.0.0")]
 
 namespace PrismaFrame
 {

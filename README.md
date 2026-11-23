@@ -4,11 +4,11 @@ Otimizador gratuito em português para ajustar FPS, estabilidade e latência em 
 
 ## Abrir o aplicativo
 
-1. Baixe **PrismaFrame.exe** nos arquivos da versão mais recente no GitHub e dê dois cliques para abrir.
+1. Baixe **PrismaFrame-Setup.msi** na versão mais recente no GitHub, execute o instalador e abra **PrismaFrame** no menu Iniciar. Para usar a versão portátil, baixe e abra **PrismaFrame.exe**.
 2. Em **Scanner do PC**, consulte **Perfil para jogos** e **Especificações**. Use **Escanear novamente** para atualizar a leitura e **Copiar relatório** para guardar as informações.
 3. Abra **Ajustes** e escolha **Automáticos** para ver o que o app consegue aplicar. Em **Revisar pacote básico**, selecione os ajustes do Windows que quer aplicar juntos.
 
-O executável portátil para Windows 10 e 11 x64 inclui a interface e os módulos do PrismaFrame. Ele usa o Windows PowerShell 5.1 e o WPF do sistema e abre diretamente em uma janela.
+O instalador padrão adiciona o PrismaFrame à conta atual. Para remover, procure **PrismaFrame** em **Configurações → Aplicativos**. Os backups de ajustes podem ser acessados novamente se você reinstalar o aplicativo. A versão instalada e a portátil usam o Windows PowerShell 5.1 e o WPF do Windows 10 e 11 x64.
 
 ## Ajustes para jogos
 
@@ -42,9 +42,11 @@ Para abrir uma cópia extraída do código-fonte, mantenha todos os arquivos na 
 
 ```powershell
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\Build-PrismaFrameExe.ps1 -OutputPath (Join-Path $PWD 'PrismaFrame.exe')
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\Build-PrismaFrameInstaller.ps1 -ExecutablePath (Join-Path $PWD 'PrismaFrame.exe') -Version 1.3.0 -OutputPath (Join-Path $PWD 'PrismaFrame-Setup.msi')
 ```
 
 - `PrismaFrameHost.cs`, `PrismaFrame.manifest` e `Build-PrismaFrameExe.ps1` montam o executável com os recursos incorporados.
+- `Build-PrismaFrameInstaller.ps1` empacota o executável em um MSI com atalho no menu Iniciar.
 - `PrismaFrame.ps1` e `PrismaFrame.xaml` contêm a interface e conectam os recursos.
 - `Tweaks.ps1` contém o catálogo, as descrições e as referências oficiais.
 - `Scanner.ps1` reúne e apresenta os dados de hardware e do Windows.
