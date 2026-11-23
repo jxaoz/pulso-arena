@@ -1,5 +1,8 @@
-﻿foreach ($providerModule in 'WindowsTuning.ps1', 'GameConfigTuning.ps1', 'NvidiaTuning.ps1') {
-    . (Join-Path $PSScriptRoot $providerModule)
+﻿$embeddedProvider = Get-Variable -Name prismaRuntime -Scope Script -ValueOnly -ErrorAction SilentlyContinue
+foreach ($providerModule in 'WindowsTuning.ps1', 'GameConfigTuning.ps1', 'NvidiaTuning.ps1') {
+    $providerSource = if ($embeddedProvider) { [scriptblock]::Create($embeddedProvider.ReadText($providerModule)) }
+        else { Join-Path $PSScriptRoot $providerModule }
+    . $providerSource
 }
 
 function New-TuningValue($Path, $Name, $Value, $Type = 'DWord', $Hive = 'CurrentUser') {
@@ -98,15 +101,14 @@ function Set-TuningValue($Definition) {
 }
 
 function Get-TuningPowerPlan {
-    $value = (& "$env:SystemRoot\System32\powercfg.exe" /getactivescheme 2>&1 | Out-String)
-    $match = [regex]::Match($value, '[0-9a-fA-F]{8}-(?:[0-9a-fA-F]{4}-){3}[0-9a-fA-F]{12}')
-    if ($LASTEXITCODE -ne 0 -or -not $match.Success) { throw 'Não foi possível identificar o plano de energia ativo.' }
-    $match.Value
+    Initialize-WindowsTuningNative
+    [Pulso.WindowsTuningNative]::GetActiveScheme().ToString()
 }
 
 function Set-TuningPowerPlan([string]$Plan) {
-    $result = (& "$env:SystemRoot\System32\powercfg.exe" /setactive $Plan 2>&1 | Out-String).Trim()
-    if ($LASTEXITCODE -ne 0) { throw "O plano está indisponível ou o acesso foi negado. $result" }
+    Initialize-WindowsTuningNative
+    try { [Pulso.WindowsTuningNative]::ActivateScheme([guid]$Plan) }
+    catch { throw "O plano está indisponível ou o acesso foi negado. $($_.Exception.GetBaseException().Message)" }
     if ((Get-TuningPowerPlan) -ne $Plan) { throw 'O Windows não confirmou o plano de energia solicitado.' }
 }
 

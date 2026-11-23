@@ -1,15 +1,17 @@
-﻿param([switch]$SelfTest, [string]$CaptureDirectory, [switch]$OpenRecovery)
+﻿param([switch]$SelfTest, [string]$CaptureDirectory, [switch]$OpenRecovery, $EmbeddedRuntime)
 
 $ErrorActionPreference = 'Stop'
 $script:appRoot = $PSScriptRoot
+$script:prismaRuntime = $EmbeddedRuntime
 Add-Type -AssemblyName PresentationFramework, PresentationCore, WindowsBase
-. (Join-Path $PSScriptRoot 'Tweaks.ps1')
-. (Join-Path $PSScriptRoot 'Scanner.ps1')
-. (Join-Path $PSScriptRoot 'Maintenance.ps1')
-. (Join-Path $PSScriptRoot 'Tuning.ps1')
-. (Join-Path $PSScriptRoot 'Recommendations.ps1')
+foreach ($name in 'Tweaks.ps1','Scanner.ps1','Maintenance.ps1','Tuning.ps1','Recommendations.ps1') {
+    $source = if ($EmbeddedRuntime) { [scriptblock]::Create($EmbeddedRuntime.ReadText($name)) } else { Join-Path $PSScriptRoot $name }
+    . $source
+}
 
-$reader = [Xml.XmlNodeReader]::new([xml](Get-Content -LiteralPath (Join-Path $PSScriptRoot 'PrismaFrame.xaml') -Raw -Encoding UTF8))
+$xaml = if ($EmbeddedRuntime) { $EmbeddedRuntime.ReadText('PrismaFrame.xaml') }
+    else { Get-Content -LiteralPath (Join-Path $PSScriptRoot 'PrismaFrame.xaml') -Raw -Encoding UTF8 }
+$reader = [Xml.XmlNodeReader]::new([xml]$xaml)
 try { $script:window = [Windows.Markup.XamlReader]::Load($reader) } finally { $reader.Close() }
 $script:ui = @{}
 foreach ($name in 'Navigation','SecondaryNav','PageCaption','PageScroll','PageBody','StatusText','WorkIndicator','SessionLabel') {
@@ -213,21 +215,30 @@ function Start-OptimizerWork([string]$Operation, $Value, [string]$Message, [scri
     }
     $command = [PowerShell]::Create()
     $background = {
-        param($Root, $Operation, $Value)
+        param($Root, $Operation, $Value, $Runtime)
         $ErrorActionPreference = 'Stop'
+        $script:prismaRuntime = $Runtime
+        $provider = switch ($Operation) {
+            Scan { 'Scanner.ps1' }
+            { $_ -in 'Preview','Clean','RestoreList','RestoreNew' } { 'Maintenance.ps1' }
+            { $_ -in 'Apply','ApplyBatch','Undo' } { 'Tuning.ps1' }
+            default { throw 'Operação desconhecida.' }
+        }
+        $source = if ($Runtime) { [scriptblock]::Create($Runtime.ReadText($provider)) } else { Join-Path $Root $provider }
+        . $source
         switch ($Operation) {
-            Scan { . (Join-Path $Root 'Scanner.ps1'); Get-OptimizationScan }
-            Preview { . (Join-Path $Root 'Maintenance.ps1'); Get-CleanupPreview -Ids @($Value) }
-            Clean { . (Join-Path $Root 'Maintenance.ps1'); Invoke-Cleanup -Preview $Value }
-            RestoreList { . (Join-Path $Root 'Maintenance.ps1'); Get-OptimizerRestorePoints }
-            RestoreNew { . (Join-Path $Root 'Maintenance.ps1'); New-OptimizerRestorePoint -Description 'PrismaFrame' }
-            Apply { . (Join-Path $Root 'Tuning.ps1'); Invoke-OptimizerTweak -Id $Value.Id -Title $Value.Title -Options $Value.Options }
-            ApplyBatch { . (Join-Path $Root 'Tuning.ps1'); Invoke-OptimizerTweakBatch -Items @($Value) }
-            Undo { . (Join-Path $Root 'Tuning.ps1'); Undo-OptimizerTweak -Token $Value }
+            Scan { Get-OptimizationScan }
+            Preview { Get-CleanupPreview -Ids @($Value) }
+            Clean { Invoke-Cleanup -Preview $Value }
+            RestoreList { Get-OptimizerRestorePoints }
+            RestoreNew { New-OptimizerRestorePoint -Description 'PrismaFrame' }
+            Apply { Invoke-OptimizerTweak -Id $Value.Id -Title $Value.Title -Options $Value.Options }
+            ApplyBatch { Invoke-OptimizerTweakBatch -Items @($Value) }
+            Undo { Undo-OptimizerTweak -Token $Value }
         }
     }
     try {
-        [void]$command.AddScript($background.ToString()).AddArgument($script:appRoot).AddArgument($Operation).AddArgument($Value)
+        [void]$command.AddScript($background.ToString()).AddArgument($script:appRoot).AddArgument($Operation).AddArgument($Value).AddArgument($script:prismaRuntime)
         $script:work = [pscustomobject]@{ Engine = $command; Handle = $command.BeginInvoke(); Complete = $Complete; Operation = $Operation }
         $script:ui.WorkIndicator.Visibility = 'Visible'
         Set-OptimizerStatus $Message
@@ -913,16 +924,20 @@ function Show-CleanupPage {
 }
 
 function Open-OptimizerSystemTool([string]$Name) {
-    try { Start-Process -FilePath (Join-Path "$env:SystemRoot\System32" $Name) -ErrorAction Stop }
+    try { Start-Process -FilePath (Join-Path ([Environment]::SystemDirectory) $Name) -ErrorAction Stop }
     catch { [void](Show-OptimizerDialog 'Não foi possível abrir' $_.Exception.Message) }
 }
 
 function Open-OptimizerAsAdmin {
     if ($script:work) { Set-OptimizerStatus 'Aguarde a operação em andamento.'; return }
     try {
-        $exe = Join-Path $PSHOME 'powershell.exe'
-        $scriptPath = Join-Path $script:appRoot 'PrismaFrame.ps1'
-        Start-Process -FilePath $exe -Verb RunAs -WindowStyle Hidden -ArgumentList "-NoLogo -NoProfile -ExecutionPolicy Bypass -STA -File `"$scriptPath`" -OpenRecovery" -ErrorAction Stop
+        if ($script:prismaRuntime) {
+            Start-Process -FilePath $script:prismaRuntime.ExecutablePath -Verb RunAs -ArgumentList '--recovery' -ErrorAction Stop
+        } else {
+            $exe = Join-Path $PSHOME 'powershell.exe'
+            $scriptPath = Join-Path $script:appRoot 'PrismaFrame.ps1'
+            Start-Process -FilePath $exe -Verb RunAs -WindowStyle Hidden -ArgumentList "-NoLogo -NoProfile -ExecutionPolicy Bypass -STA -File `"$scriptPath`" -OpenRecovery" -ErrorAction Stop
+        }
         $script:window.Close()
     } catch { Set-OptimizerStatus 'A elevação foi cancelada ou o Windows não concedeu acesso.' -Problem }
 }
@@ -1171,6 +1186,12 @@ if ($SelfTest) {
         Wait-OptimizerSelfTestWork
         if ($null -eq $script:preview) { throw 'Prévia de limpeza ausente.' }
         Write-OptimizerCapture '04-limpeza'
+        if ($EmbeddedRuntime) {
+            $unrecognized = [pscustomobject]@{ Id = 'self-test'; Title = 'Autoteste'; Options = [pscustomobject]@{} }
+            Start-OptimizerWork 'Apply' $unrecognized 'Validando o módulo integrado…' {}
+            try { Wait-OptimizerSelfTestWork; throw 'O módulo aceitou um ajuste inexistente.' }
+            catch { if ($_.Exception.Message -notmatch 'Ajuste automático desconhecido') { throw } }
+        }
         Show-OptimizerPage 'Recuperação'
         Write-OptimizerCapture '05-recuperacao'
         Show-OptimizerPage 'Referências'

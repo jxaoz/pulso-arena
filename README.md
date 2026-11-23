@@ -4,12 +4,11 @@ Otimizador gratuito em português para ajustar FPS, estabilidade e latência em 
 
 ## Abrir o aplicativo
 
-1. Extraia toda a pasta do ZIP. Mantenha o iniciador e os arquivos `.ps1` e `.xaml` juntos.
-2. Dê dois cliques em **Abrir PrismaFrame.cmd**.
-3. Em **Scanner do PC**, consulte **Perfil para jogos** e **Especificações**. Use **Escanear novamente** para atualizar a leitura e **Copiar relatório** para guardar as informações.
-4. Abra **Ajustes** e escolha **Automáticos** para ver o que o app consegue aplicar. Em **Revisar pacote básico**, selecione os ajustes do Windows que quer aplicar juntos.
+1. Baixe **PrismaFrame.exe** nos arquivos da versão mais recente no GitHub e dê dois cliques para abrir.
+2. Em **Scanner do PC**, consulte **Perfil para jogos** e **Especificações**. Use **Escanear novamente** para atualizar a leitura e **Copiar relatório** para guardar as informações.
+3. Abra **Ajustes** e escolha **Automáticos** para ver o que o app consegue aplicar. Em **Revisar pacote básico**, selecione os ajustes do Windows que quer aplicar juntos.
 
-O aplicativo usa o Windows PowerShell 5.1 de 64 bits e o WPF que acompanham o Windows 10 e 11 de 64 bits. A opção de política de execução do iniciador vale apenas para a instância do PowerShell que carrega o aplicativo.
+O executável portátil para Windows 10 e 11 x64 inclui a interface e os módulos do PrismaFrame. Ele usa o Windows PowerShell 5.1 e o WPF do sistema e abre diretamente em uma janela.
 
 ## Ajustes para jogos
 
@@ -39,6 +38,13 @@ A seleção inicial cobre arquivos `.tmp` e `.temp` antigos do usuário. Tempor�
 
 ## Código-fonte
 
+Para abrir uma cópia extraída do código-fonte, mantenha todos os arquivos na mesma pasta e execute **Abrir PrismaFrame.cmd**. Para compilar o executável no Windows x64, rode o script de compilação em uma sessão do Windows PowerShell 5.1 e indique o caminho de saída absoluto.
+
+```powershell
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\Build-PrismaFrameExe.ps1 -OutputPath (Join-Path $PWD 'PrismaFrame.exe')
+```
+
+- `PrismaFrameHost.cs`, `PrismaFrame.manifest` e `Build-PrismaFrameExe.ps1` montam o executável com os recursos incorporados.
 - `PrismaFrame.ps1` e `PrismaFrame.xaml` contêm a interface e conectam os recursos.
 - `Tweaks.ps1` contém o catálogo, as descrições e as referências oficiais.
 - `Scanner.ps1` reúne e apresenta os dados de hardware e do Windows.

@@ -149,6 +149,11 @@ namespace Pulso
             finally { LocalFree(scheme); }
         }
 
+        public static void ActivateScheme(Guid scheme)
+        {
+            Check(PowerSetActiveScheme(IntPtr.Zero, ref scheme));
+        }
+
         public static uint ReadAc(Guid scheme, Guid subgroup, Guid setting)
         {
             uint value;
@@ -162,7 +167,7 @@ namespace Pulso
                 throw new InvalidOperationException("O ajuste do plano mudou desde a conferência.");
             Check(PowerWriteACValueIndex(IntPtr.Zero, ref scheme, ref subgroup, ref setting, value));
             if (GetActiveScheme() == scheme)
-                Check(PowerSetActiveScheme(IntPtr.Zero, ref scheme));
+                ActivateScheme(scheme);
         }
     }
 }
