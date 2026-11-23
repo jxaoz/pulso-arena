@@ -42,7 +42,7 @@ Para abrir uma cópia extraída do código-fonte, mantenha todos os arquivos na 
 
 ```powershell
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\Build-PrismaFrameExe.ps1 -OutputPath (Join-Path $PWD 'PrismaFrame.exe')
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\Build-PrismaFrameInstaller.ps1 -ExecutablePath (Join-Path $PWD 'PrismaFrame.exe') -Version 1.3.0 -OutputPath (Join-Path $PWD 'PrismaFrame-Setup.msi')
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\Build-PrismaFrameInstaller.ps1 -ExecutablePath (Join-Path $PWD 'PrismaFrame.exe') -Version 1.3.1 -OutputPath (Join-Path $PWD 'PrismaFrame-Setup.msi')
 ```
 
 - `PrismaFrameHost.cs`, `PrismaFrame.manifest` e `Build-PrismaFrameExe.ps1` montam o executável com os recursos incorporados.

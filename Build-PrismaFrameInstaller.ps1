@@ -170,7 +170,7 @@ try {
     Import-InstallerTable 'Property' 'Property|Value' 's72|l0' 'Property' @(
         "ProductCode|$productCode", "ProductVersion|$versionText", "UpgradeCode|$upgradeCode", 'ProductName|PrismaFrame',
         'Manufacturer|PrismaFrame', 'ProductLanguage|1046', 'INSTALLLEVEL|1', 'ARPNOMODIFY|1',
-        'ARPURLINFOABOUT|https://github.com/jxaoz/pulso-arena', 'SecureCustomProperties|PRISMAFRAME_OLDER;PRISMAFRAME_NEWER'
+        'ARPURLINFOABOUT|https://github.com/jxaoz/pulso-arena', 'SecureCustomProperties|PRISMAFRAME_OLDER;PRISMAFRAME_NEWER;PRISMAFRAME_OS_BUILD'
     )
     Import-InstallerTable 'Directory' 'Directory|Directory_Parent|DefaultDir' 's72|S72|l255' 'Directory' @(
         'TARGETDIR||SourceDir', 'LocalAppDataFolder|TARGETDIR|.', 'UserPrograms|LocalAppDataFolder|Programs:.',
@@ -204,8 +204,16 @@ try {
     Import-InstallerTable 'Upgrade' 'UpgradeCode|VersionMin|VersionMax|Language|Attributes|Remove|ActionProperty' 's38|S20|S20|S255|i4|S255|s72' 'UpgradeCode|VersionMin|VersionMax|Language|Attributes' @(
         "$upgradeCode||$versionText||0||PRISMAFRAME_OLDER", "$upgradeCode|$versionText|||2||PRISMAFRAME_NEWER"
     )
+    # Check the native registry view because MSI compatibility version properties can report an older build.
+    Import-InstallerTable 'Signature' 'Signature|FileName|MinVersion|MaxVersion|MinSize|MaxSize|MinDate|MaxDate|Languages' 's72|l255|S20|S20|I4|I4|I4|I4|S255' 'Signature' @()
+    Import-InstallerTable 'RegLocator' 'Signature_|Root|Key|Name|Type' 's72|i2|s255|S255|I2' 'Signature_' @(
+        'WindowsBuildRegistry|2|SOFTWARE\Microsoft\Windows NT\CurrentVersion|CurrentBuildNumber|18'
+    )
+    Import-InstallerTable 'AppSearch' 'Property|Signature_' 's72|s72' 'Property|Signature_' @(
+        'PRISMAFRAME_OS_BUILD|WindowsBuildRegistry'
+    )
     Import-InstallerTable 'LaunchCondition' 'Condition|Description' 's255|l255' 'Condition' @(
-        'Installed OR (VersionNT64 AND WindowsBuild >= 10240)|O PrismaFrame requer Windows 10 ou 11 de 64 bits.',
+        'Installed OR PRISMAFRAME_OS_BUILD >= 10240 OR (VersionNT64 AND WindowsBuild >= 10240)|O PrismaFrame requer Windows 10 ou 11 de 64 bits.',
         'NOT ALLUSERS|Instale o PrismaFrame para a sua conta do Windows.',
         'Installed OR NOT PRISMAFRAME_NEWER|Uma versão mais recente do PrismaFrame já está instalada.'
     )
@@ -221,7 +229,7 @@ try {
     Import-InstallerTable 'ControlEvent' 'Dialog_|Control_|Event|Argument|Condition|Ordering' 's72|s50|s50|l255|S255|I2' 'Dialog_|Control_|Event|Argument|Condition' @(
         'InstallPrismaFrame|Install|EndDialog|Return|1|1', 'InstallPrismaFrame|Cancel|EndDialog|Exit|1|1'
     )
-    $prepare = @('FindRelatedProducts||25', 'LaunchConditions||100', 'ValidateProductID||700', 'CostInitialize||800', 'FileCost||900', 'CostFinalize||1000')
+    $prepare = @('FindRelatedProducts||25', 'AppSearch||50', 'LaunchConditions||100', 'ValidateProductID||700', 'CostInitialize||800', 'FileCost||900', 'CostFinalize||1000')
     Import-InstallerSequence 'InstallUISequence' ($prepare + @('InstallPrismaFrame|NOT Installed|1200', 'ExecuteAction||1300'))
     Import-InstallerSequence 'InstallExecuteSequence' ($prepare + @(
         'InstallValidate||1400', 'InstallInitialize||1500', 'RemoveExistingProducts|PRISMAFRAME_OLDER|1501',
