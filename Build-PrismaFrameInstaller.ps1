@@ -218,19 +218,24 @@ try {
         'Installed OR NOT PRISMAFRAME_NEWER|Uma versão mais recente do PrismaFrame já está instalada.'
     )
     Import-InstallerTable 'Dialog' 'Dialog|HCentering|VCentering|Width|Height|Attributes|Title|Control_First|Control_Default|Control_Cancel' 's72|i2|i2|i2|i2|i4|L128|s50|S50|S50' 'Dialog' @(
-        'InstallPrismaFrame|50|50|310|122|3|Instalar PrismaFrame|Install|Install|Cancel'
+        'InstallPrismaFrame|50|50|310|122|3|Instalar PrismaFrame|Install|Install|Cancel',
+        'PrismaFrameComplete|50|50|310|122|3|PrismaFrame - Instalação concluída|Finish|Finish|Finish'
     )
     Import-InstallerTable 'Control' 'Dialog_|Control|Type|X|Y|Width|Height|Attributes|Property|Text|Control_Next|Help' 's72|s50|s20|i2|i2|i2|i2|I4|S50|L0|S50|L50' 'Dialog_|Control' @(
         'InstallPrismaFrame|Heading|Text|16|12|277|17|3||Instalar o PrismaFrame||',
         'InstallPrismaFrame|Details|Text|16|35|277|45|3||O aplicativo será instalado para a sua conta, com um atalho no menu Iniciar.||',
         'InstallPrismaFrame|Install|PushButton|174|92|58|17|3||Instalar|Cancel|',
-        'InstallPrismaFrame|Cancel|PushButton|239|92|58|17|3||Cancelar|Install|'
+        'InstallPrismaFrame|Cancel|PushButton|239|92|58|17|3||Cancelar|Install|',
+        'PrismaFrameComplete|Heading|Text|16|12|277|17|3||Instalação concluída||',
+        'PrismaFrameComplete|Details|Text|16|35|277|45|3||Para abrir o aplicativo, procure PrismaFrame no menu Iniciar do Windows.||',
+        'PrismaFrameComplete|Finish|PushButton|239|92|58|17|3||Concluir|Finish|'
     )
     Import-InstallerTable 'ControlEvent' 'Dialog_|Control_|Event|Argument|Condition|Ordering' 's72|s50|s50|l255|S255|I2' 'Dialog_|Control_|Event|Argument|Condition' @(
-        'InstallPrismaFrame|Install|EndDialog|Return|1|1', 'InstallPrismaFrame|Cancel|EndDialog|Exit|1|1'
+        'InstallPrismaFrame|Install|EndDialog|Return|1|1', 'InstallPrismaFrame|Cancel|EndDialog|Exit|1|1',
+        'PrismaFrameComplete|Finish|EndDialog|Return|1|1'
     )
     $prepare = @('FindRelatedProducts||25', 'AppSearch||50', 'LaunchConditions||100', 'ValidateProductID||700', 'CostInitialize||800', 'FileCost||900', 'CostFinalize||1000')
-    Import-InstallerSequence 'InstallUISequence' ($prepare + @('InstallPrismaFrame|NOT Installed|1200', 'ExecuteAction||1300'))
+    Import-InstallerSequence 'InstallUISequence' ($prepare + @('InstallPrismaFrame|NOT Installed|1200', 'ExecuteAction||1300', 'PrismaFrameComplete||-1'))
     Import-InstallerSequence 'InstallExecuteSequence' ($prepare + @(
         'InstallValidate||1400', 'InstallInitialize||1500', 'RemoveExistingProducts|PRISMAFRAME_OLDER|1501',
         'ProcessComponents||1600', 'UnpublishFeatures||1800', 'RemoveRegistryValues||2600', 'RemoveShortcuts||3200',

@@ -4,7 +4,7 @@ Otimizador gratuito em português para ajustar FPS, estabilidade e latência em 
 
 ## Abrir o aplicativo
 
-1. Baixe **PrismaFrame-Setup.msi** na versão mais recente no GitHub, execute o instalador e abra **PrismaFrame** no menu Iniciar. Para usar a versão portátil, baixe e abra **PrismaFrame.exe**.
+1. Baixe **PrismaFrame-Setup.msi** na versão mais recente no GitHub e execute o instalador. Quando aparecer **Instalação concluída**, clique em **Concluir** e abra **PrismaFrame** no menu Iniciar. Para usar a versão portátil, baixe e abra **PrismaFrame.exe**.
 2. Em **Scanner do PC**, consulte **Perfil para jogos** e **Especificações**. Use **Escanear novamente** para atualizar a leitura e **Copiar relatório** para guardar as informações.
 3. Abra **Ajustes** e escolha **Automáticos** para ver o que o app consegue aplicar. Em **Revisar pacote básico**, selecione os ajustes do Windows que quer aplicar juntos.
 
@@ -42,7 +42,7 @@ Para abrir uma cópia extraída do código-fonte, mantenha todos os arquivos na 
 
 ```powershell
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\Build-PrismaFrameExe.ps1 -OutputPath (Join-Path $PWD 'PrismaFrame.exe')
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\Build-PrismaFrameInstaller.ps1 -ExecutablePath (Join-Path $PWD 'PrismaFrame.exe') -Version 1.3.1 -OutputPath (Join-Path $PWD 'PrismaFrame-Setup.msi')
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\Build-PrismaFrameInstaller.ps1 -ExecutablePath (Join-Path $PWD 'PrismaFrame.exe') -Version 1.3.2 -OutputPath (Join-Path $PWD 'PrismaFrame-Setup.msi')
 ```
 
 - `PrismaFrameHost.cs`, `PrismaFrame.manifest` e `Build-PrismaFrameExe.ps1` montam o executável com os recursos incorporados.
